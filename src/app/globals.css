@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+  
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Light mode palette (optional, but good to have) */
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.14 0.05 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.05 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.14 0.05 285);
+  
+  /* Primary: Blue/Purple */
+  --primary: oklch(0.45 0.25 285);
+  --primary-foreground: oklch(0.98 0 0);
+  
+  --secondary: oklch(0.96 0.01 285);
+  --secondary-foreground: oklch(0.2 0.05 285);
+  --muted: oklch(0.96 0.01 285);
+  --muted-foreground: oklch(0.55 0.05 285);
+  --accent: oklch(0.96 0.01 285);
+  --accent-foreground: oklch(0.2 0.05 285);
+  
+  /* Destructive: Red */
+  --destructive: oklch(0.57 0.2 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  
+  /* Success: Green */
+  --success: oklch(0.62 0.17 145);
+  --success-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.9 0.02 285);
+  --input: oklch(0.9 0.02 285);
+  --ring: oklch(0.45 0.25 285);
+  
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Dark mode palette (Financial Terminal) */
+  --background: oklch(0.13 0.02 280); /* Deep dark blue-gray */
+  --foreground: oklch(0.98 0 0);
+  
+  --card: oklch(0.16 0.02 280);
+  --card-foreground: oklch(0.98 0 0);
+  
+  --popover: oklch(0.16 0.02 280);
+  --popover-foreground: oklch(0.98 0 0);
+  
+  /* Primary: Deep Purple/Blue */
+  --primary: oklch(0.65 0.25 285);
+  --primary-foreground: oklch(0.98 0 0);
+  
+  --secondary: oklch(0.25 0.04 280);
+  --secondary-foreground: oklch(0.98 0 0);
+  
+  --muted: oklch(0.25 0.04 280);
+  --muted-foreground: oklch(0.7 0.02 280);
+  
+  --accent: oklch(0.25 0.04 280);
+  --accent-foreground: oklch(0.98 0 0);
+  
+  /* Destructive: Bright Red for drops */
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  
+  /* Success: Bright Green for gains */
+  --success: oklch(0.65 0.2 150);
+  --success-foreground: oklch(0.98 0 0);
+  
+  --border: oklch(0.25 0.04 280);
+  --input: oklch(0.25 0.04 280);
+  --ring: oklch(0.65 0.25 285);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Hide TradingView Attribution Logo */
+#tv-attr-logo {
+  display: none !important;
 }
