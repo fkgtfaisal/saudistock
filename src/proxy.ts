@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { nextUrl, cookies } = request;
 
   // Check if any of the standard NextAuth session cookies are present
@@ -45,7 +45,10 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Matcher to run middleware on all routes except static assets, images, etc.
+// Export as default as well to be fully compliant with both proxy syntax styles
+export default proxy;
+
+// Matcher to run proxy on all routes except static assets, images, etc.
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
