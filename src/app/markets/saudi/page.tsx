@@ -130,15 +130,19 @@ export default function MarketSaudiPage() {
             تحديث
           </button>
           {data?.tasi && (
-            <span
-              className={`px-3 py-1 rounded-md text-sm font-bold ${
-                data.tasi.marketState === "REGULAR"
-                  ? "bg-success/10 text-success"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {data.tasi.marketState === "REGULAR" ? "السوق مفتوح" : "السوق مغلق"}
-            </span>
+            <div className="flex items-center">
+              {data.tasi.marketState === "REGULAR" ? (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm">
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                  السوق مفتوح
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 bg-rose-500/15 text-rose-500 border border-rose-500/20 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm">
+                  <span className="inline-block h-2 w-2 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                  السوق مغلق
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

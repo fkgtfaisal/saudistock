@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, use, useEffect, useCallback } from "react";
+import { useState, use, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ArrowUpRight, ArrowDownRight, Maximize2, Newspaper, Users, FileText,
   BarChart3, TrendingUp, Globe, MessageSquare, Calendar, Building2,
-  Plus, X, Search, RefreshCw, Monitor, Laptop, Tablet, Smartphone,
+  Plus, X, Search, RefreshCw, Monitor, Laptop, Tablet, Smartphone, ChevronDown, Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChartComponent } from "@/components/ChartComponent";
@@ -39,6 +40,7 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
   const router = useRouter();
   const { symbol } = use(params);
   const info = STOCK_MAP[symbol];
+  const { data: session } = useSession();
 
   const [quote, setQuote]           = useState<StockQuote | null>(null);
   const [chartData, setChartData]   = useState<CandleData[]>([]);
@@ -51,7 +53,13 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
   const [loadingNews, setLoadingNews] = useState(false);
   const [activeTab, setActiveTab]   = useState("overview");
   const [indicators, setIndicators] = useState<string[]>([]);
-  const [watchlist, setWatchlist]   = useState<string[]>(defaultWatchlist);
+  const [watchlist, setWatchlist]   = useState<string[]>([]);
+  const [watchlistId, setWatchlistId] = useState<string | null>(null);
+  const [allWatchlists, setAllWatchlists] = useState<any[]>([]);
+  const hasLoadedSettings = useRef(false);
+  const [isCreatingList, setIsCreatingList] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [isCreatingListLoading, setIsCreatingListLoading] = useState(false);
   
   const [showSymbolDropdown, setShowSymbolDropdown] = useState(false);
   const [showIndicatorDropdown, setShowIndicatorDropdown] = useState(false);
@@ -104,6 +112,60 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
   useEffect(() => { loadQuote(); }, [loadQuote]);
   useEffect(() => { loadChart(); }, [loadChart]);
 
+  // Load saved layout settings (timeframe and indicators)
+  useEffect(() => {
+    hasLoadedSettings.current = false;
+    
+    if (!session?.user) {
+      hasLoadedSettings.current = true;
+      return;
+    }
+    
+    const fetchLayout = async () => {
+      try {
+        const res = await fetch(`/api/charts/${symbol}`);
+        if (res.ok) {
+          const layout = await res.json();
+          if (layout && layout.layoutData) {
+            const layoutData = typeof layout.layoutData === 'string' ? JSON.parse(layout.layoutData) : layout.layoutData;
+            if (layoutData.timeframe) setTimeframe(layoutData.timeframe);
+            if (Array.isArray(layoutData.indicators)) setIndicators(layoutData.indicators);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load saved layout settings", e);
+      } finally {
+        hasLoadedSettings.current = true;
+      }
+    };
+    fetchLayout();
+  }, [symbol, session]);
+
+  // Save layout settings when timeframe or indicators change
+  useEffect(() => {
+    if (!hasLoadedSettings.current || !session?.user) return;
+    
+    const saveLayout = async () => {
+      try {
+        await fetch(`/api/charts/${symbol}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            layoutData: {
+              timeframe: timeframe,
+              indicators: indicators
+            }
+          })
+        });
+      } catch (e) {
+        console.error("Failed to save layout settings", e);
+      }
+    };
+    
+    const timer = setTimeout(saveLayout, 1000);
+    return () => clearTimeout(timer);
+  }, [timeframe, indicators, symbol, session]);
+
   // Lazy-load summary when user opens a tab that needs it
   useEffect(() => {
     if (["financials", "technicals", "forecasts", "profile"].includes(activeTab)) {
@@ -123,30 +185,130 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
   // --- Watchlist Persistence ---
   const [isWatchlistLoaded, setIsWatchlistLoaded] = useState(false);
 
-  // Load on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("tadawul_terminal_watchlist");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setWatchlist(parsed);
+    async function fetchWatchlist() {
+      if (!session?.user) {
+        // Fallback to local storage if not logged in
+        if (typeof window !== "undefined") {
+          const saved = localStorage.getItem("tadawul_terminal_watchlist");
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setWatchlist(parsed);
+              } else {
+                setWatchlist(defaultWatchlist);
+              }
+            } catch (e) {
+              setWatchlist(defaultWatchlist);
+            }
+          } else {
+            setWatchlist(defaultWatchlist);
           }
-        } catch (e) {
-          console.error("Failed to parse watchlist", e);
+          setIsWatchlistLoaded(true);
         }
+        return;
       }
-      setIsWatchlistLoaded(true);
-    }
-  }, []);
 
-  // Save on change
-  useEffect(() => {
-    if (isWatchlistLoaded && typeof window !== "undefined") {
-      localStorage.setItem("tadawul_terminal_watchlist", JSON.stringify(watchlist));
+      try {
+        const res = await fetch('/api/watchlists');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        
+        if (data && data.length > 0) {
+          setAllWatchlists(data);
+          const selected = data.find((w: any) => w.id === watchlistId) || data[0];
+          setWatchlistId(selected.id);
+          setWatchlist(selected.items.map((item: any) => item.symbol));
+        } else {
+          const createRes = await fetch('/api/watchlists', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'قائمة المراقبة الرئيسية' })
+          });
+          const newList = await createRes.json();
+          setAllWatchlists([{ ...newList, items: [] }]);
+          setWatchlistId(newList.id);
+          setWatchlist([]);
+        }
+      } catch (e) {
+        console.error("Watchlist fetch error:", e);
+      } finally {
+        setIsWatchlistLoaded(true);
+      }
     }
-  }, [watchlist, isWatchlistLoaded]);
+    
+    if (session !== undefined) {
+      fetchWatchlist();
+    }
+  }, [session]);
+
+  const toggleWatchlist = async (sym: string) => {
+    const inWatchlist = watchlist.includes(sym);
+    
+    // Optimistic UI update
+    if (inWatchlist) {
+      setWatchlist((w) => w.filter((x) => x !== sym));
+      setAllWatchlists(all => all.map(w => w.id === watchlistId ? { ...w, items: w.items.filter((i: any) => i.symbol !== sym) } : w));
+    } else {
+      setWatchlist((w) => [...w, sym]);
+      setAllWatchlists(all => all.map(w => w.id === watchlistId ? { ...w, items: [...w.items, { symbol: sym }] } : w));
+    }
+
+    if (!session?.user) {
+      // Save to local storage
+      const newW = inWatchlist ? watchlist.filter((x) => x !== sym) : [...watchlist, sym];
+      localStorage.setItem("tadawul_terminal_watchlist", JSON.stringify(newW));
+      return;
+    }
+
+    if (!watchlistId) return;
+
+    try {
+      if (inWatchlist) {
+        await fetch(`/api/watchlists/${watchlistId}/items?symbol=${sym}`, { method: 'DELETE' });
+      } else {
+        await fetch(`/api/watchlists/${watchlistId}/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: sym })
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update watchlist", error);
+    }
+  };
+
+  const handleWatchlistChange = (id: string) => {
+    setWatchlistId(id);
+    const selected = allWatchlists.find(w => w.id === id);
+    if (selected) {
+      setWatchlist(selected.items.map((item: any) => item.symbol));
+    }
+  };
+
+  const createNewWatchlist = async () => {
+    if (!newListName.trim() || !session?.user) return;
+    try {
+      setIsCreatingListLoading(true);
+      const res = await fetch('/api/watchlists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newListName.trim() })
+      });
+      if (!res.ok) throw new Error("Failed to create list");
+      const newList = await res.json();
+      setAllWatchlists(all => [...all, { ...newList, items: [] }]);
+      setWatchlistId(newList.id);
+      setWatchlist([]);
+      setIsCreatingList(false);
+      setNewListName("");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsCreatingListLoading(false);
+    }
+  };
   // -----------------------------
 
   const toggleIndicator = (ind: string) =>
@@ -184,6 +346,22 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                   <span className="font-bold text-foreground">{symbol}</span>
                   <span className="opacity-30">•</span>
                   <span className="truncate">{sector}</span>
+                  {quote && (
+                    <>
+                      <span className="opacity-30">•</span>
+                      {quote.marketState === "REGULAR" ? (
+                        <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded font-bold text-[10px]">
+                          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                          السوق مفتوح
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 bg-rose-500/15 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded font-bold text-[10px]">
+                          <span className="inline-block h-2 w-2 rounded-full bg-rose-500 animate-pulse shrink-0"></span>
+                          السوق مغلق
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -385,17 +563,71 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
               {/* Watchlist Card */}
               <div className="flex flex-col border border-border bg-card rounded-2xl overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-xs font-black tracking-tight">قائمة المراقبة</span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                    {session?.user && allWatchlists.length > 0 ? (
+                      <div className="relative flex items-center group">
+                        <select 
+                          value={watchlistId || ""} 
+                          onChange={(e) => handleWatchlistChange(e.target.value)}
+                          className="bg-transparent text-xs font-black tracking-tight focus:outline-none appearance-none truncate cursor-pointer hover:text-primary transition-colors max-w-[120px] sm:max-w-[150px] pr-5"
+                          title="اختر قائمة المراقبة"
+                        >
+                          {allWatchlists.map(w => (
+                            <option key={w.id} value={w.id} className="bg-card text-foreground">{w.name}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="h-3 w-3 absolute right-0 pointer-events-none opacity-50 group-hover:opacity-100 group-hover:text-primary transition-all" />
+                      </div>
+                    ) : (
+                      <span className="text-xs font-black tracking-tight truncate">قائمة المراقبة</span>
+                    )}
                   </div>
+                  <div className="flex items-center gap-1.5">
+                    {session?.user && (
+                      <button 
+                        onClick={() => setIsCreatingList(!isCreatingList)}
+                        className="p-1.5 rounded-lg bg-background border border-border hover:border-primary text-muted-foreground hover:text-primary transition-all active:scale-90"
+                        title="إنشاء قائمة جديدة"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setShowPicker(true)} 
+                      className="p-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all active:scale-90"
+                      title="إضافة سهم للقائمة الحالية"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              {isCreatingList && (
+                <div className="flex items-center gap-2 p-2 bg-muted/20 border-b border-border animate-in slide-in-from-top-2">
+                  <input
+                    type="text"
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                    placeholder="اسم القائمة الجديدة..."
+                    className="flex-1 bg-background border border-border rounded px-2 py-1.5 text-xs focus:outline-none focus:border-primary"
+                    onKeyDown={(e) => { if (e.key === "Enter") createNewWatchlist(); }}
+                    autoFocus
+                  />
                   <button 
-                    onClick={() => setShowPicker(true)} 
-                    className="p-1.5 rounded-lg bg-background border border-border hover:border-primary text-muted-foreground hover:text-primary transition-all active:scale-90"
+                    onClick={createNewWatchlist} 
+                    disabled={isCreatingListLoading || !newListName.trim()}
+                    className="p-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
                   >
-                    <Plus className="h-4 w-4" />
+                    {isCreatingListLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  </button>
+                  <button 
+                    onClick={() => { setIsCreatingList(false); setNewListName(""); }}
+                    className="p-1.5 rounded bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+                  >
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
+              )}
               <div className="grid grid-cols-[1fr_60px_60px] gap-0 px-2 py-1 border-b border-border text-[10px] text-muted-foreground font-bold">
                 <span></span>
                 <span className="text-left" dir="ltr">السعر</span>
@@ -411,7 +643,7 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                       sym={sym}
                       nameAr={s.nameAr}
                       isCurrent={sym === symbol}
-                      onRemove={() => setWatchlist((w) => w.filter((x) => x !== sym))}
+                      onRemove={() => toggleWatchlist(sym)}
                     />
                   );
                 })}
@@ -479,10 +711,7 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                       <p className="text-[10px] text-muted-foreground">{s.symbol} · {s.sector}</p>
                     </div>
                     <button
-                      onClick={() => {
-                        if (inWatchlist) setWatchlist((w) => w.filter((x) => x !== s.symbol));
-                        else setWatchlist((w) => [...w, s.symbol]);
-                      }}
+                      onClick={() => toggleWatchlist(s.symbol)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shrink-0 mr-3 ${
                         inWatchlist
                           ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
@@ -495,8 +724,13 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                 );
               })}
             </div>
-            <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground">
-              {watchlist.length} سهم في قائمة المراقبة
+            <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground flex justify-between">
+              <span>{watchlist.length} سهم في قائمة المراقبة</span>
+              {session?.user && allWatchlists.length > 0 && (
+                <span className="truncate max-w-[200px]">
+                  القائمة الحالية: <span className="font-bold text-foreground">{allWatchlists.find(w => w.id === watchlistId)?.name}</span>
+                </span>
+              )}
             </div>
           </div>
         </div>

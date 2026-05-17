@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 import { Navbar } from "@/components/Navbar";
+import { AuthProvider } from "@/components/AuthProvider";
 
 export default function RootLayout({
   children,
@@ -24,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className="dark" suppressHydrationWarning>
       <body className={`${cairo.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`} suppressHydrationWarning>
-        <Navbar />
+        <AuthProvider>
+          <Navbar />
 
-        <main className="flex-1 overflow-x-hidden">
-          {children}
-        </main>
+          <main className="flex-1 overflow-x-hidden">
+            {children}
+          </main>
+        </AuthProvider>
 
         <footer className="border-t py-6 md:py-0">
           <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 md:h-16 text-sm text-muted-foreground">

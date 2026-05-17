@@ -136,10 +136,20 @@ export function ChartComponent(props: {
     previewSeriesGroupRef.current = [];
   }, []);
 
-  const saveDrawings = useCallback(() => {
+  const saveDrawings = useCallback(async () => {
     if (typeof window === "undefined") return;
     const toSave = drawnItemsRef.current.map(item => ({ type: item.type, points: item.points }));
     localStorage.setItem(`drawings_${props.symbol || "default"}`, JSON.stringify(toSave));
+    
+    try {
+      await fetch(`/api/charts/${props.symbol}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drawingsData: toSave })
+      });
+    } catch (e) {
+      console.error("Failed to save to DB", e);
+    }
   }, [props.symbol]);
 
   const undoLastDrawing = useCallback(() => {
@@ -220,6 +230,7 @@ export function ChartComponent(props: {
     });
 
     chartRef.current = chart;
+    let isDisposed = false;
 
     /** Pane 0: Main Candles */
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
@@ -315,18 +326,23 @@ export function ChartComponent(props: {
 
     /** Set Pane Heights Proportionality */
     requestAnimationFrame(() => {
-      const panes = chart.panes();
-      const h = container.clientHeight || 650;
-      if (panes.length === 1) panes[0]?.setHeight(h);
-      else if (panes.length === 2) {
-        panes[0]?.setHeight(Math.floor(h * 0.72));
-        panes[1]?.setHeight(Math.floor(h * 0.28));
-      } else if (panes.length >= 3) {
-        panes[0]?.setHeight(Math.floor(h * 0.58));
-        panes[1]?.setHeight(Math.floor(h * 0.21));
-        panes[2]?.setHeight(Math.floor(h * 0.21));
+      if (isDisposed) return;
+      try {
+        const panes = chart.panes();
+        const h = container.clientHeight || 650;
+        if (panes.length === 1) panes[0]?.setHeight(h);
+        else if (panes.length === 2) {
+          panes[0]?.setHeight(Math.floor(h * 0.72));
+          panes[1]?.setHeight(Math.floor(h * 0.28));
+        } else if (panes.length >= 3) {
+          panes[0]?.setHeight(Math.floor(h * 0.58));
+          panes[1]?.setHeight(Math.floor(h * 0.21));
+          panes[2]?.setHeight(Math.floor(h * 0.21));
+        }
+        chart.timeScale().fitContent();
+      } catch (e) {
+        // Ignore disposed errors
       }
-      chart.timeScale().fitContent();
     });
 
     /** Drawing Tools Integration */
@@ -429,29 +445,118 @@ export function ChartComponent(props: {
      * Ensures the canvas always fills the container perfectly, even during transitions.
      */
     const resizeObserver = new ResizeObserver(() => {
-      if (!container || !chart) return;
+      if (isDisposed || !container || !chart) return;
       const w = container.clientWidth;
       const h = container.clientHeight || 650;
       
-      chart.applyOptions({ width: w, height: h });
+      try {
+        chart.applyOptions({ width: w, height: h });
+      } catch (e) {
+        return;
+      }
       
       requestAnimationFrame(() => {
-        const panes = chart.panes() || [];
-        if (panes.length === 1) panes[0]?.setHeight(h);
-        else if (panes.length === 2) {
-          panes[0]?.setHeight(Math.floor(h * 0.72));
-          panes[1]?.setHeight(Math.floor(h * 0.28));
-        } else if (panes.length >= 3) {
-          panes[0]?.setHeight(Math.floor(h * 0.58));
-          panes[1]?.setHeight(Math.floor(h * 0.21));
-          panes[2]?.setHeight(Math.floor(h * 0.21));
-        }
+        if (isDisposed) return;
+        try {
+          const panes = chart.panes() || [];
+          if (panes.length === 1) panes[0]?.setHeight(h);
+          else if (panes.length === 2) {
+            panes[0]?.setHeight(Math.floor(h * 0.72));
+            panes[1]?.setHeight(Math.floor(h * 0.28));
+          } else if (panes.length >= 3) {
+            panes[0]?.setHeight(Math.floor(h * 0.58));
+            panes[1]?.setHeight(Math.floor(h * 0.21));
+            panes[2]?.setHeight(Math.floor(h * 0.21));
+          }
+        } catch (e) {}
       });
     });
 
     resizeObserver.observe(container);
 
+    const loadDrawings = async () => {
+      try {
+        const res = await fetch(`/api/charts/${symbol}`);
+        if (!res.ok || isDisposed) return;
+        const result = await res.json();
+        if (isDisposed) return;
+        let savedDrawings = result.drawingsData;
+        
+        if (!savedDrawings) {
+          const local = localStorage.getItem(`drawings_${symbol || "default"}`);
+          if (local) savedDrawings = JSON.parse(local);
+        }
+
+        if (savedDrawings && Array.isArray(savedDrawings) && savedDrawings.length > 0) {
+          const allTimes = data.map(d => d.time);
+          savedDrawings.forEach(item => {
+            if (!item.points || item.points.length < 2) return;
+            const start = item.points[0];
+            const end = item.points[1];
+            const tool = item.type;
+            
+            if (tool === "fib") {
+              const high = Math.max(start.value, end.value);
+              const low = Math.min(start.value, end.value);
+              const diff = high - low;
+              const fibLevels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
+              const fibColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ef4444"];
+              const fibSeriesGroup: any[] = [];
+              fibLevels.forEach((level, idx) => {
+                const fibPrice = high - diff * level;
+                const line = chart.addSeries(LineSeries, { color: fibColors[idx], lineWidth: 1, lineStyle: 2, title: `${(level * 100).toFixed(1)}%`, lastValueVisible: true, priceLineVisible: false, crosshairMarkerVisible: false }, 0);
+                line.setData([{ time: allTimes[0], value: fibPrice }, { time: allTimes[allTimes.length - 1], value: fibPrice }]);
+                fibSeriesGroup.push(line);
+              });
+              drawnItemsRef.current.push({ type: "fib", points: [start, end], series: fibSeriesGroup });
+            } else {
+              const color = tool === "rect" ? "rgba(99, 102, 241, 0.4)" : "#eab308";
+              const s = chart.addSeries(tool === "rect" ? AreaSeries : LineSeries, {
+                color, lineWidth: 2, crosshairMarkerVisible: false, lastValueVisible: false, priceLineVisible: false,
+                ...(tool === "rect" ? { topColor: "rgba(99, 102, 241, 0.20)", bottomColor: "rgba(99, 102, 241, 0.05)", lineVisible: true } : {}),
+              }, 0);
+              
+              if (tool === "trendline" || tool === "arrow") {
+                s.setData(interpolateLine(start, end, allTimes));
+              } else if (tool === "hline") {
+                s.setData([{ time: allTimes[0], value: start.value }, { time: allTimes[allTimes.length - 1], value: start.value }]);
+              } else if (tool === "vline") {
+                const minP = Math.min(...data.map(d => d.low)) * 0.95;
+                const maxP = Math.max(...data.map(d => d.high)) * 1.05;
+                s.setData([{ time: start.time, value: minP }, { time: start.time, value: maxP }]);
+              } else if (tool === "ray" || tool === "extended") {
+                const t1 = allTimes.indexOf(String(start.time));
+                const t2 = allTimes.indexOf(String(end.time));
+                if (t1 !== -1 && t2 !== -1 && t1 !== t2) {
+                  const slope = (end.value - start.value) / (t2 - t1);
+                  if (tool === "ray") {
+                    s.setData([{ time: start.time, value: start.value }, { time: allTimes[allTimes.length - 1], value: start.value + slope * (allTimes.length - 1 - t1) }]);
+                  } else {
+                    s.setData([{ time: allTimes[0], value: start.value + slope * (0 - t1) }, { time: allTimes[allTimes.length - 1], value: start.value + slope * (allTimes.length - 1 - t1) }]);
+                  }
+                }
+              } else if (tool === "rect") {
+                const top = Math.max(start.value, end.value);
+                const t0 = String(start.time);
+                const t1 = String(end.time);
+                const range = [t0, t1].sort();
+                const rectData = allTimes.filter(t => String(t) >= range[0] && String(t) <= range[1]).map(t => ({ time: t, value: top }));
+                s.setData(rectData);
+              }
+              drawnItemsRef.current.push({ type: tool, points: [start, end], series: [s] });
+            }
+          });
+          setDrawCount(drawnItemsRef.current.length);
+        }
+      } catch (e) {
+        console.error("Failed to load drawings", e);
+      }
+    };
+    
+    loadDrawings();
+
     return () => {
+      isDisposed = true;
       resizeObserver.disconnect();
       container.removeEventListener("click", onChartClick);
       try { chart.remove(); } catch {}

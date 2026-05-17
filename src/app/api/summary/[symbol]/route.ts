@@ -37,8 +37,6 @@ export async function GET(
   if (cached && !refresh) return NextResponse.json(cached, { headers: { "X-Cache": "HIT" } });
 
   try {
-    console.log(`[summary API] Fetching data for ticker: ${ticker}`);
-    
     // Use a timeout to prevent hanging the server
     const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
 
@@ -72,8 +70,6 @@ export async function GET(
 
     const data: any = await Promise.race([fetchData(), timeout(15000)]);
     const { summary, fundamentalsA, fundamentalsQ } = data;
-
-    console.log(`[summary API] Successfully fetched data for ${ticker}`);
 
     const mapToFmt = (fund: any) => {
       if (!fund || !fund.date) return null;

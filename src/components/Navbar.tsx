@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Building2, Globe, LayoutDashboard, BarChart3, Filter, Bell, Newspaper, Users, Zap, Shield, Settings } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { Menu, X, Building2, Globe, LayoutDashboard, BarChart3, Filter, Bell, Newspaper, Users, Zap, Shield, Settings, LogOut, User as UserIcon } from "lucide-react";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session } = useSession();
 
   const navLinks = [
     { href: "/", label: "الرئيسية", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -46,12 +48,29 @@ export function Navbar() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <button className="hidden sm:block text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">
-            تسجيل الدخول
-          </button>
-          <button className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/20 hover:scale-105 active:scale-95">
-            اشترك الآن
-          </button>
+          {session ? (
+            <>
+              <span className="hidden sm:inline-block text-sm font-bold text-primary">
+                مرحباً، {session.user?.name || 'مستخدم'}
+              </span>
+              <button 
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="hidden sm:flex items-center gap-1 text-sm font-medium text-foreground/60 hover:text-destructive transition-colors"
+                title="تسجيل الخروج"
+              >
+                <LogOut className="h-4 w-4" /> خروج
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="hidden sm:block text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">
+                تسجيل الدخول
+              </Link>
+              <Link href="/register" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary/90 transition-all shadow-md shadow-primary/20 hover:scale-105 active:scale-95">
+                اشترك الآن
+              </Link>
+            </>
+          )}
           
           {/* Mobile Menu Toggle */}
           <button 
@@ -85,12 +104,28 @@ export function Navbar() {
               </Link>
             ))}
             <div className="mt-auto pt-6 border-t border-border flex flex-col gap-3">
-              <button className="w-full py-3 text-center font-bold text-foreground/70 hover:text-foreground">
-                تسجيل الدخول
-              </button>
-              <button className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold">
-                اشترك الآن مجاناً
-              </button>
+              {session ? (
+                <>
+                  <div className="text-center py-2 text-sm text-primary font-bold">
+                    مرحباً، {session.user?.name}
+                  </div>
+                  <button 
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="w-full py-4 bg-destructive/10 text-destructive rounded-xl font-bold hover:bg-destructive/20 transition-colors flex justify-center items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" /> تسجيل الخروج
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" onClick={() => setIsOpen(false)} className="w-full py-3 text-center font-bold text-foreground/70 hover:text-foreground">
+                    تسجيل الدخول
+                  </Link>
+                  <Link href="/register" onClick={() => setIsOpen(false)} className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold flex justify-center">
+                    إنشاء حساب
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </div>

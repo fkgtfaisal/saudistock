@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  name             String?
+  password         String?           // Added for NextAuth Credentials
+  subscriptionTier String            @default("FREE") // FREE, PRO, ELITE
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  watchlists       Watchlist[]
+  chartLayouts     ChartLayout[]
+  portfolios       Portfolio[]
+}
+
+model Watchlist {
+  id        String          @id @default(uuid())
+  name      String
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WatchlistItem[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([userId, name])
+}
+
+model WatchlistItem {
+  id          String    @id @default(uuid())
+  watchlistId String
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  symbol      String
+  addedAt     DateTime  @default(now())
+
+  @@unique([watchlistId, symbol])
+}
+
+model ChartLayout {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol       String
+  layoutData   Json?    // For saving pane heights, visible ranges, etc.
+  drawingsData Json?    // For saving trendlines, fibonacci, etc.
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, symbol])
+}
+
+model Portfolio {
+  id        String          @id @default(uuid())
+  name      String
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     PortfolioItem[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model PortfolioItem {
+  id           String    @id @default(uuid())
+  portfolioId  String
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol       String
+  quantity     Float
+  averagePrice Float
+  addedAt      DateTime  @default(now())
+
+  @@unique([portfolioId, symbol])
+}
