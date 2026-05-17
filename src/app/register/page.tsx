@@ -42,10 +42,10 @@ export default function RegisterPage() {
       });
 
       if (signInResult?.error) {
-        router.push("/login");
+        window.location.href = "/login";
       } else {
-        router.push("/watchlists");
-        router.refresh();
+        // Use window.location.href to force a full document load, ensuring iOS Safari commits cookies first
+        window.location.href = "/watchlists";
       }
     } catch (err) {
       setError("حدث خطأ في الاتصال بالخادم");

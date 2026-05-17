@@ -28,8 +28,8 @@ export default function LoginPage() {
       setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       setLoading(false);
     } else {
-      router.push("/watchlists");
-      router.refresh();
+      // Use window.location.href to force a full document load, ensuring iOS Safari commits cookies first
+      window.location.href = "/watchlists";
     }
   };
 
