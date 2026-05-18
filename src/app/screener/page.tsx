@@ -180,6 +180,18 @@ export default function ScreenerPage() {
     }
   }, [toastMessage]);
 
+  // Load saved filters on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("saudi_stock_saved_filters");
+    if (saved) {
+      try {
+        setFilters(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved filters:", e);
+      }
+    }
+  }, []);
+
   // Automatically adapt operators when the chosen metric changes
   useEffect(() => {
     if (selectedField === "sector" || selectedField === "market") {
@@ -320,19 +332,24 @@ export default function ScreenerPage() {
       stock.sector,
       stock.price.toFixed(2),
       `${stock.changePercent.toFixed(2)}%`,
-      stock.volume,
+      stock.volume.toString(),
       stock.peRatio.toFixed(2),
       stock.rsi.toFixed(1)
     ]);
 
+    // Escape cells with double quotes to comply with RFC 4180
     const csvContent = "\uFEFF" 
-      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      + [
+          headers.map(h => `"${h.replace(/"/g, '""')}"`).join(","),
+          ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
+        ].join("\n");
     
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
     link.setAttribute("download", `saudistock_screener_export_${Date.now()}.csv`);
+    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -362,7 +379,7 @@ export default function ScreenerPage() {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-border shadow-2xl rounded-lg p-4 flex items-center gap-3 animate-slide-up duration-300">
+        <div className="fixed bottom-6 right-6 z-[200] bg-slate-900 border border-border shadow-2xl rounded-lg p-4 flex items-center gap-3 animate-slide-up duration-300">
           {toastType === "success" ? (
             <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />
           ) : (
@@ -428,12 +445,14 @@ export default function ScreenerPage() {
             <span className="text-sm text-muted-foreground">لا توجد فلاتر نشطة حالياً. يتم عرض جميع الأسهم.</span>
           ) : (
             filters.map(filter => (
-              <div 
+              <button 
                 key={filter.id} 
-                className="bg-slate-900 border border-border px-3.5 py-2 rounded-xl flex items-center gap-2.5 text-sm hover:border-slate-700 transition-all duration-200"
+                onClick={() => removeFilter(filter.id)}
+                className="bg-slate-900 border border-border px-3.5 py-2 rounded-xl flex items-center gap-2.5 text-sm hover:border-rose-500/30 hover:bg-rose-500/5 transition-all duration-200 cursor-pointer group"
+                title="اضغط لحذف الفلتر"
               >
-                <span className="text-muted-foreground">{filter.fieldNameAr}:</span>
-                <span className="font-bold text-foreground">
+                <span className="text-muted-foreground group-hover:text-rose-300 transition-colors">{filter.fieldNameAr}:</span>
+                <span className="font-bold text-foreground group-hover:text-rose-200 transition-colors">
                   {filter.operator === "between" 
                     ? `${filter.value[0]} - ${filter.value[1]}`
                     : filter.operator === "greaterThan"
@@ -442,14 +461,8 @@ export default function ScreenerPage() {
                     ? `< ${filter.value}`
                     : filter.value}
                 </span>
-                <button 
-                  onClick={() => removeFilter(filter.id)}
-                  className="text-muted-foreground hover:text-rose-400 p-0.5 rounded transition-colors"
-                  aria-label="Remove filter"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
+                <X className="h-3.5 w-3.5 text-muted-foreground group-hover:text-rose-400 transition-colors" />
+              </button>
             ))
           )}
         </div>
@@ -544,8 +557,14 @@ export default function ScreenerPage() {
 
       {/* Add Filter Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300">
-          <div className="bg-card border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-zoom-in">
+        <div 
+          className="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 transition-all duration-300"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div 
+            className="bg-card border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-zoom-in"
+            onClick={e => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="p-6 border-b border-border flex items-center justify-between bg-slate-900/40">
               <div className="flex items-center gap-2.5">
@@ -632,6 +651,7 @@ export default function ScreenerPage() {
                           type="number" 
                           step="any"
                           required
+                          autoFocus
                           value={minBound}
                           onChange={e => setMinBound(e.target.value)}
                           placeholder="0.00"
@@ -658,6 +678,7 @@ export default function ScreenerPage() {
                         type="number" 
                         step="any"
                         required
+                        autoFocus
                         value={singleValue}
                         onChange={e => setSingleValue(e.target.value)}
                         placeholder="أدخل القيمة الرقمية..."
