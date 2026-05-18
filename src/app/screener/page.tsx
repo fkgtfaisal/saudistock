@@ -182,13 +182,31 @@ export default function ScreenerPage() {
 
   // Load saved filters on mount
   useEffect(() => {
-    const saved = localStorage.getItem("saudi_stock_saved_filters");
-    if (saved) {
-      try {
-        setFilters(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse saved filters:", e);
+    try {
+      const saved = localStorage.getItem("saudi_stock_saved_filters");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const validFilters = parsed.filter(f => {
+            return (
+              f &&
+              typeof f === "object" &&
+              typeof f.id === "string" &&
+              (f.field === "market" || f.field in initialStocks[0]) &&
+              typeof f.fieldNameAr === "string" &&
+              ["equals", "greaterThan", "lessThan", "between"].includes(f.operator) &&
+              typeof f.operatorNameAr === "string" &&
+              f.value !== undefined &&
+              f.value !== null
+            );
+          });
+          if (validFilters.length > 0) {
+            setFilters(validFilters);
+          }
+        }
       }
+    } catch (e) {
+      console.error("Failed to parse saved filters:", e);
     }
   }, []);
 
@@ -207,9 +225,9 @@ export default function ScreenerPage() {
     if (searchQuery) {
       const q = searchQuery.trim().toLowerCase();
       const matchesSearch = 
-        stock.symbol.includes(q) || 
-        stock.name.toLowerCase().includes(q) || 
-        stock.sector.toLowerCase().includes(q);
+        (stock.symbol || "").includes(q) || 
+        (stock.name || "").toLowerCase().includes(q) || 
+        (stock.sector || "").toLowerCase().includes(q);
       
       if (!matchesSearch) return false;
     }
@@ -219,7 +237,7 @@ export default function ScreenerPage() {
       if (filter.field === "market") continue; // Mock filter, does not limit results
 
       const val = stock[filter.field as keyof StockData];
-      if (val === undefined) continue;
+      if (val === undefined || val === null) continue;
 
       if (filter.operator === "equals") {
         if (String(val).toLowerCase() !== String(filter.value).toLowerCase()) return false;
@@ -228,7 +246,8 @@ export default function ScreenerPage() {
       } else if (filter.operator === "lessThan") {
         if (Number(val) >= Number(filter.value)) return false;
       } else if (filter.operator === "between") {
-        const [min, max] = filter.value as [number, number];
+        const min = Array.isArray(filter.value) ? Number(filter.value[0]) : 0;
+        const max = Array.isArray(filter.value) ? Number(filter.value[1]) : 0;
         if (Number(val) < min || Number(val) > max) return false;
       }
     }
@@ -327,14 +346,14 @@ export default function ScreenerPage() {
   const handleExportCSV = () => {
     const headers = ["الرمز", "الشركة", "القطاع", "السعر", "التغير (%)", "الحجم", "مكرر الربحية", "RSI (14)"];
     const rows = filteredData.map(stock => [
-      stock.symbol,
-      stock.name,
-      stock.sector,
-      stock.price.toFixed(2),
-      `${stock.changePercent.toFixed(2)}%`,
-      stock.volume.toString(),
-      stock.peRatio.toFixed(2),
-      stock.rsi.toFixed(1)
+      stock.symbol || "",
+      stock.name || "",
+      stock.sector || "",
+      (stock.price ?? 0).toFixed(2),
+      `${(stock.changePercent ?? 0).toFixed(2)}%`,
+      (stock.volume ?? 0).toString(),
+      (stock.peRatio ?? 0).toFixed(2),
+      (stock.rsi ?? 0).toFixed(1)
     ]);
 
     // Escape cells with double quotes to comply with RFC 4180
@@ -359,18 +378,46 @@ export default function ScreenerPage() {
 
   // Save current active filters to localStorage
   const handleSaveFilters = () => {
-    localStorage.setItem("saudi_stock_saved_filters", JSON.stringify(filters));
-    showToast("تم حفظ مجموعة الفلاتر النشطة في متصفحك!");
+    try {
+      localStorage.setItem("saudi_stock_saved_filters", JSON.stringify(filters));
+      showToast("تم حفظ مجموعة الفلاتر النشطة في متصفحك!");
+    } catch (e) {
+      console.error("Failed to save filters:", e);
+      showToast("فشل حفظ الفلاتر في المتصفح.", "info");
+    }
   };
 
   // Load previously saved filters
   const handleLoadSavedFilters = () => {
-    const saved = localStorage.getItem("saudi_stock_saved_filters");
-    if (saved) {
-      setFilters(JSON.parse(saved));
-      showToast("تم استعادة الفلاتر المحفوظة بنجاح!");
-    } else {
-      showToast("لا توجد فلاتر محفوظة مسبقاً في هذا المتصفح.", "info");
+    try {
+      const saved = localStorage.getItem("saudi_stock_saved_filters");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const validFilters = parsed.filter(f => {
+            return (
+              f &&
+              typeof f === "object" &&
+              typeof f.id === "string" &&
+              (f.field === "market" || f.field in initialStocks[0]) &&
+              typeof f.fieldNameAr === "string" &&
+              ["equals", "greaterThan", "lessThan", "between"].includes(f.operator) &&
+              typeof f.operatorNameAr === "string" &&
+              f.value !== undefined &&
+              f.value !== null
+            );
+          });
+          if (validFilters.length > 0) {
+            setFilters(validFilters);
+            showToast("تم استعادة الفلاتر المحفوظة بنجاح!");
+            return;
+          }
+        }
+      }
+      showToast("لا توجد فلاتر صالحة محفوظة مسبقاً في متصفحك.", "info");
+    } catch (e) {
+      console.error("Failed to restore filters:", e);
+      showToast("فشل استعادة الفلاتر بسبب تلف البيانات.", "info");
     }
   };
 
@@ -454,7 +501,7 @@ export default function ScreenerPage() {
                 <span className="text-muted-foreground group-hover:text-rose-300 transition-colors">{filter.fieldNameAr}:</span>
                 <span className="font-bold text-foreground group-hover:text-rose-200 transition-colors">
                   {filter.operator === "between" 
-                    ? `${filter.value[0]} - ${filter.value[1]}`
+                    ? `${Array.isArray(filter.value) ? filter.value[0] ?? 0 : 0} - ${Array.isArray(filter.value) ? filter.value[1] ?? 0 : 0}`
                     : filter.operator === "greaterThan"
                     ? `> ${filter.value}`
                     : filter.operator === "lessThan"
