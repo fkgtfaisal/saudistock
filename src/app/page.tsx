@@ -3,6 +3,8 @@
 import { ArrowDownRight, ArrowUpRight, BarChart3, Bell, Filter, LayoutDashboard, LineChart, MessageSquare, Shield, TrendingUp, Zap } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
+
 
 export default function LandingPage() {
   return (
@@ -42,6 +44,25 @@ export default function LandingPage() {
             <Link href="#features" className="bg-secondary text-secondary-foreground px-8 py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all w-full sm:w-auto text-center border border-border/50">
               اكتشف المميزات
             </Link>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="mt-16 relative mx-auto max-w-5xl rounded-2xl border border-border/50 bg-card/30 p-2 shadow-2xl backdrop-blur-sm"
+          >
+            <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
+              <Image
+                src="/images/hero.webp"
+                alt="منصة تحليل الأسهم"
+                width={1200}
+                height={600}
+                priority
+                className="w-full h-auto object-cover"
+              />
+            </div>
+            <div className="absolute -inset-0.5 -z-10 rounded-2xl bg-gradient-to-t from-primary/10 to-transparent blur-lg" />
           </motion.div>
         </div>
       </section>

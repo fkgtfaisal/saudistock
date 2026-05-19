@@ -1,34 +1,21 @@
 import { PrismaClient } from '@prisma/client'
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 let prisma: PrismaClient;
 
-if (process.env.NODE_ENV === 'production') {
-  // Production / Serverless Vercel environment
-  const { Pool } = require('@neondatabase/serverless');
-  const { PrismaNeon } = require('@prisma/adapter-neon');
-  
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is not set');
-  }
-  
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaNeon(pool);
-  prisma = new PrismaClient({ adapter });
-} else {
-  // Local Development environment (Node.js)
-  const { Pool } = require('pg');
-  const { PrismaPg } = require('@prisma/adapter-pg');
-  
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is not set');
-  }
-  
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaPg(pool);
-  prisma = new PrismaClient({ adapter });
+const connectionString = process.env.DATABASE_URL;
+console.log('[PRISMA CLIENT] Initializing with NODE_ENV:', process.env.NODE_ENV);
+console.log('[PRISMA CLIENT] DATABASE_URL exists:', !!connectionString);
+console.log('[PRISMA CLIENT] DATABASE_URL type/length:', typeof connectionString, connectionString?.length);
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is not set');
 }
+
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+prisma = new PrismaClient({ adapter });
 
 declare global {
   // eslint-disable-next-line no-var

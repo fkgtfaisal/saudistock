@@ -3,11 +3,27 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, Building2, Globe, LayoutDashboard, BarChart3, Filter, Bell, Newspaper, Users, Zap, Shield, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { STOCK_MAP } from "@/lib/stocks";
+import { Menu, X, Building2, Globe, LayoutDashboard, BarChart3, Filter, Bell, Newspaper, Users, Zap, Shield, Settings, LogOut, User as UserIcon, ChevronDown, Search } from "lucide-react";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session } = useSession();
+  const pathname = usePathname();
+
+  const isChartPage = pathname?.startsWith("/chart/");
+  const currentSymbol = isChartPage ? pathname.split("/").pop() || "2222" : "";
+  const currentStock = STOCK_MAP[currentSymbol];
+  
+  const [showSymbolDropdown, setShowSymbolDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredStocks = Object.values(STOCK_MAP).filter(stock => 
+    stock.symbol.includes(searchTerm) || 
+    stock.nameAr.includes(searchTerm) || 
+    stock.nameEn?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const navLinks = [
     { href: "/", label: "الرئيسية", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -24,14 +40,67 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center font-bold text-primary-foreground shadow-lg shadow-primary/20">
-            S
-          </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:inline-block">منصة ذكاء الأسهم</span>
-          <span className="font-bold text-lg tracking-tight sm:hidden">ذكاء الأسهم</span>
-        </Link>
+        {/* Logo and Stock Selector */}
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center font-bold text-primary-foreground shadow-lg shadow-primary/20 animate-pulse-slow">
+              S
+            </div>
+            <span className="font-bold text-lg tracking-tight hidden sm:inline-block">منصة ذكاء الأسهم</span>
+            <span className="font-bold text-lg tracking-tight sm:hidden">ذكاء الأسهم</span>
+          </Link>
+
+          {isChartPage && currentStock && (
+            <div className="relative">
+              <button
+                onClick={() => setShowSymbolDropdown(!showSymbolDropdown)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/65 hover:bg-muted text-xs sm:text-sm font-bold transition-all border border-border/60 hover:border-primary/50 text-foreground"
+              >
+                <span className="text-primary font-mono">{currentStock.symbol}</span>
+                <span className="text-foreground hidden md:inline-block">{currentStock.nameAr}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+              {showSymbolDropdown && (
+                <div className="absolute top-full right-0 mt-2 w-72 bg-popover border border-border rounded-xl shadow-2xl z-[150] p-2 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="relative flex items-center px-2 py-1 bg-muted/50 rounded-lg border border-border">
+                    <Search className="h-4 w-4 text-muted-foreground ml-2 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="ابحث بالرمز أو الاسم..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full bg-transparent border-none text-xs py-1.5 focus:outline-none font-bold text-foreground"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-64 overflow-y-auto flex flex-col gap-0.5 scrollbar-thin">
+                    {filteredStocks.length === 0 ? (
+                      <div className="text-center text-xs text-muted-foreground py-4">
+                        لا توجد نتائج
+                      </div>
+                    ) : (
+                      filteredStocks.map((stock) => (
+                        <Link
+                          key={stock.symbol}
+                          href={`/chart/${stock.symbol}`}
+                          onClick={() => { setShowSymbolDropdown(false); setSearchTerm(""); }}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                            stock.symbol === currentSymbol
+                              ? "bg-primary/20 text-primary"
+                              : "hover:bg-muted text-foreground"
+                          }`}
+                        >
+                          <span className="text-foreground">{stock.nameAr}</span>
+                          <span className="font-mono text-muted-foreground" dir="ltr">{stock.symbol}</span>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Desktop Nav */}
         <nav className="hidden xl:flex items-center gap-6 text-sm font-medium">

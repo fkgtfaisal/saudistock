@@ -2,7 +2,9 @@
 
 import { useState, use, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+
 import { useSession } from "next-auth/react";
 import {
   ArrowUpRight, ArrowDownRight, Maximize2, Newspaper, Users, FileText,
@@ -1269,11 +1271,13 @@ function NewsTab({ news, loading }: { news: any[]; loading: boolean }) {
             className="group bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-5 hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
           >
             {item.thumbnail?.resolutions?.[0]?.url && (
-              <div className="w-full sm:w-32 h-40 sm:h-24 shrink-0 rounded-xl overflow-hidden border border-border bg-muted/20 shadow-inner">
-                <img 
+              <div className="w-full sm:w-32 h-40 sm:h-24 shrink-0 rounded-xl overflow-hidden border border-border bg-muted/20 shadow-inner relative">
+                <Image 
                   src={item.thumbnail.resolutions[0].url} 
                   alt={item.title} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                  fill
+                  sizes="(max-width: 640px) 100vw, 128px"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700" 
                 />
               </div>
             )}

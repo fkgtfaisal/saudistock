@@ -107,8 +107,10 @@ export function ChartComponent(props: {
   symbol?: string;
   indicators?: string[];
   colors?: { backgroundColor?: string; textColor?: string };
+  chartType?: "candles" | "line" | "area";
+  showGrid?: boolean;
 }) {
-  const { data, symbol = "TADAWUL", indicators = [] } = props;
+  const { data, symbol = "TADAWUL", indicators = [], chartType = "candles", showGrid = true } = props;
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -208,7 +210,10 @@ export function ChartComponent(props: {
           enableResize: true,
         },
       },
-      grid: { vertLines: { color: tvGrid }, horzLines: { color: tvGrid } },
+      grid: {
+        vertLines: { color: showGrid ? tvGrid : "transparent" },
+        horzLines: { color: showGrid ? tvGrid : "transparent" },
+      },
       crosshair: {
         mode: 0,
         vertLine: { color: "#758696", width: 1, style: 3, labelBackgroundColor: tvBlue },
@@ -232,14 +237,31 @@ export function ChartComponent(props: {
     chartRef.current = chart;
     let isDisposed = false;
 
-    /** Pane 0: Main Candles */
-    const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#26a69a", downColor: "#ef5350", borderUpColor: "#26a69a", borderDownColor: "#ef5350",
-      wickUpColor: "#26a69a", wickDownColor: "#ef5350", borderVisible: true, lastValueVisible: true,
-    }, 0);
-    candlestickSeriesRef.current = candlestickSeries;
-    seriesRef.current.candlestick = candlestickSeries;
-    candlestickSeries.setData(data);
+    /** Pane 0: Main Series (Candles, Line, or Area) */
+    let mainSeries;
+    if (chartType === "line") {
+      mainSeries = chart.addSeries(LineSeries, {
+        color: "#2962FF",
+        lineWidth: 2,
+        lastValueVisible: true,
+      }, 0);
+    } else if (chartType === "area") {
+      mainSeries = chart.addSeries(AreaSeries, {
+        topColor: "rgba(41, 98, 255, 0.3)",
+        bottomColor: "rgba(41, 98, 255, 0.0)",
+        lineColor: "#2962FF",
+        lineWidth: 2,
+        lastValueVisible: true,
+      }, 0);
+    } else {
+      mainSeries = chart.addSeries(CandlestickSeries, {
+        upColor: "#26a69a", downColor: "#ef5350", borderUpColor: "#26a69a", borderDownColor: "#ef5350",
+        wickUpColor: "#26a69a", wickDownColor: "#ef5350", borderVisible: true, lastValueVisible: true,
+      }, 0);
+    }
+    candlestickSeriesRef.current = mainSeries;
+    seriesRef.current.candlestick = mainSeries;
+    mainSeries.setData(data);
 
     /** Volume integration inside Pane 0 (Overlay at bottom) */
     const hasVolume = data.some(d => typeof d.volume === "number");
@@ -392,7 +414,7 @@ export function ChartComponent(props: {
     chart.subscribeCrosshairMove((param: any) => {
       if (updateLock) return;
       if (!param.point || !param.time) { lastCrosshairRef.current = null; return; }
-      const price = candlestickSeries.coordinateToPrice(param.point.y);
+      const price = mainSeries.coordinateToPrice(param.point.y);
       if (price === null) return;
       lastCrosshairRef.current = { time: param.time, value: price, originalPoint: param.point };
 

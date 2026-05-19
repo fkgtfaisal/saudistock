@@ -60,6 +60,10 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
   const [newListName, setNewListName] = useState("");
   const [isCreatingListLoading, setIsCreatingListLoading] = useState(false);
 
+  const [chartType, setChartType] = useState<"candles" | "line" | "area">("candles");
+  const [showGrid, setShowGrid] = useState(true);
+  const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+
   const currentStock = info || { symbol, nameAr: `سهم ${symbol}`, sector: "" };
 
   const loadQuote = useCallback(async () => {
@@ -254,8 +258,8 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-background">
-      {/* Top Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-card border-b border-border shrink-0 relative z-50 overflow-x-auto hide-scrollbar scroll-smooth">
+      {/* Top Toolbar - Wrapped beautifully on small screens without vertical clipping */}
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-card border-b border-border shrink-0 relative z-50">
         <Link
           href={`/symbols/${symbol}`}
           className="flex items-center gap-1 px-2 py-1.5 rounded text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-1"
@@ -266,32 +270,14 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
 
         <div className="h-6 w-px bg-border mx-1"></div>
 
-        {/* Symbol Selector */}
-        <div className="relative">
-          <button
-            onClick={() => { setShowSymbolDropdown(!showSymbolDropdown); setShowIndicatorDropdown(false); }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded bg-muted/50 hover:bg-muted text-sm font-bold transition-colors"
-          >
-            <span className="text-primary">{currentStock.symbol}</span>
-            <span className="text-foreground">{currentStock.nameAr}</span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground" />
-          </button>
-          {showSymbolDropdown && (
-            <div className="absolute top-full right-0 mt-1 w-64 bg-popover border border-border rounded-lg shadow-xl z-[100] max-h-80 overflow-y-auto">
-              {Object.values(STOCK_MAP).map((stock) => (
-                <Link
-                  key={stock.symbol}
-                  href={`/chart/${stock.symbol}`}
-                  onClick={() => setShowSymbolDropdown(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors ${
-                    stock.symbol === symbol ? "bg-primary/10 text-primary" : ""
-                  }`}
-                >
-                  <span className="font-mono font-bold w-12 text-left" dir="ltr">{stock.symbol}</span>
-                  <span className="text-foreground">{stock.nameAr}</span>
-                </Link>
-              ))}
-            </div>
+        {/* Current Active Symbol Label (Search is moved to Navbar) */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs font-bold transition-all">
+          <span className="text-primary font-mono">{currentStock.symbol}</span>
+          <span className="text-foreground">{currentStock.nameAr}</span>
+          {currentStock.sector && (
+            <span className="text-[10px] text-muted-foreground font-normal bg-muted px-1.5 py-0.5 rounded">
+              {currentStock.sector}
+            </span>
           )}
         </div>
 
@@ -319,8 +305,8 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
         {/* Indicators Dropdown */}
         <div className="relative">
           <button
-            onClick={() => { setShowIndicatorDropdown(!showIndicatorDropdown); setShowSymbolDropdown(false); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            onClick={() => { setShowIndicatorDropdown(!showIndicatorDropdown); setShowSettingsDropdown(false); setShowWatchlistDropdown(false); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-colors ${showIndicatorDropdown ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
           >
             <span>المؤشرات</span>
             {indicators.length > 0 && (
@@ -331,34 +317,38 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
             <ChevronDown className="h-3 w-3" />
           </button>
           {showIndicatorDropdown && (
-            <div className="absolute top-full right-0 mt-1 w-72 bg-popover border border-border rounded-lg shadow-xl z-[100]">
-              <div className="p-2 border-b border-border">
-                <span className="text-xs text-muted-foreground font-bold px-2">المؤشرات الفنية</span>
+            <div className="absolute top-full right-0 mt-1 w-72 bg-popover border border-border rounded-lg shadow-xl z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="p-2 border-b border-border bg-muted/20">
+                <span className="text-xs text-muted-foreground font-bold px-2">المؤشرات الفنية (اختر لتفعيلها)</span>
               </div>
-              {indicatorsList.map((ind) => (
-                <button
-                  key={ind.id}
-                  onClick={() => toggleIndicator(ind.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-right ${
-                    indicators.includes(ind.id) ? "bg-primary/5" : ""
-                  }`}
-                >
-                  <div
-                    className={`w-3 h-3 rounded-sm border-2 transition-colors ${
-                      indicators.includes(ind.id) ? "border-primary bg-primary" : "border-muted-foreground"
+              <div className="flex flex-col max-h-64 overflow-y-auto scrollbar-thin">
+                {indicatorsList.map((ind) => (
+                  <button
+                    key={ind.id}
+                    onClick={() => toggleIndicator(ind.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-right ${
+                      indicators.includes(ind.id) ? "bg-primary/5" : ""
                     }`}
-                  />
-                  <span className="font-bold" style={{ color: ind.color }}>{ind.id}</span>
-                  <span className="text-muted-foreground text-xs">{ind.label}</span>
-                </button>
-              ))}
+                  >
+                    <div
+                      className={`w-3.5 h-3.5 rounded-sm border transition-colors flex items-center justify-center ${
+                        indicators.includes(ind.id) ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"
+                      }`}
+                    >
+                      {indicators.includes(ind.id) && <Check className="h-2.5 w-2.5" />}
+                    </div>
+                    <span className="font-bold" style={{ color: ind.color }}>{ind.id}</span>
+                    <span className="text-muted-foreground text-xs">{ind.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
 
         {/* Active Indicator Chips */}
         {indicators.length > 0 && (
-          <div className="flex items-center gap-1 mr-1">
+          <div className="flex flex-wrap items-center gap-1 mr-1">
             {indicators.map((ind) => {
               const info = indicatorsList.find((i) => i.id === ind);
               return (
@@ -392,7 +382,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
           {session?.user && allWatchlists.length > 0 ? (
             <div className="relative flex items-center group">
               <button
-                onClick={() => { setShowWatchlistDropdown(!showWatchlistDropdown); setShowSymbolDropdown(false); setShowIndicatorDropdown(false); }}
+                onClick={() => { setShowWatchlistDropdown(!showWatchlistDropdown); setShowIndicatorDropdown(false); setShowSettingsDropdown(false); }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded bg-muted/50 hover:bg-muted text-sm font-bold transition-colors"
                 title="عرض قائمة المراقبة"
               >
@@ -401,7 +391,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
               </button>
 
               {showWatchlistDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-popover border border-border rounded-lg shadow-xl z-[100] max-h-80 flex flex-col">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-popover border border-border rounded-lg shadow-xl z-[100] max-h-80 flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
                   {/* Select Watchlist */}
                   <div className="p-2 border-b border-border bg-muted/30">
                     <select 
@@ -469,7 +459,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
           </button>
         </div>
 
-        {/* Fullscreen etc */}
+        {/* Fullscreen, settings etc */}
         <div className="flex items-center gap-1 border-r border-border pr-2">
           <button
             onClick={() => alert("سيتم حفظ صورة من الرسم البياني")}
@@ -478,12 +468,52 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
           >
             <Camera className="h-4 w-4" />
           </button>
-          <button
-            className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title="إعدادات الرسم"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
+          
+          {/* Working configuration settings button */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowSettingsDropdown(!showSettingsDropdown); setShowIndicatorDropdown(false); setShowWatchlistDropdown(false); }}
+              className={`p-1.5 rounded transition-colors ${showSettingsDropdown ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+              title="إعدادات الرسم"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+            {showSettingsDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-56 bg-popover border border-border rounded-lg shadow-xl z-[100] p-2 flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="px-2 py-1 border-b border-border">
+                  <span className="text-xs text-muted-foreground font-bold">تخصيص الرسم البياني</span>
+                </div>
+                
+                {/* Chart Style Selector */}
+                <div className="flex flex-col gap-1 px-2">
+                  <span className="text-[10px] text-muted-foreground font-bold">نمط الرسم</span>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(["candles", "line", "area"] as const).map((style) => (
+                      <button
+                        key={style}
+                        onClick={() => { setChartType(style); setShowSettingsDropdown(false); }}
+                        className={`py-1 text-[10px] font-bold rounded border transition-colors ${chartType === style ? "bg-primary/20 border-primary text-primary" : "border-border hover:bg-muted text-foreground"}`}
+                      >
+                        {style === "candles" ? "شموع" : style === "line" ? "خطي" : "مساحة"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Show/Hide Grid */}
+                <button
+                  onClick={() => { setShowGrid(!showGrid); setShowSettingsDropdown(false); }}
+                  className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-bold hover:bg-muted rounded text-right transition-colors"
+                >
+                  <span className="text-foreground">إظهار الشبكة البيانية</span>
+                  <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-colors ${showGrid ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"}`}>
+                    {showGrid && <Check className="h-2.5 w-2.5" />}
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+          
           <button
             onClick={toggleFullscreen}
             className="p-1.5 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -570,7 +600,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
             <p className="text-sm font-bold text-muted-foreground">جاري تحميل بيانات الرسم البياني...</p>
           </div>
         ) : (
-          <ChartComponent data={chartData} symbol={symbol} indicators={indicators} />
+          <ChartComponent data={chartData} symbol={symbol} indicators={indicators} chartType={chartType} showGrid={showGrid} />
         )}
       </div>
 
