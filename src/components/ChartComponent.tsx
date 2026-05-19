@@ -193,6 +193,7 @@ export function ChartComponent(props: {
 
     const container = chartContainerRef.current;
     container.innerHTML = ""; // Clear container to avoid duplicate chart containers in DOM
+    drawnItemsRef.current = []; // Clear old series references to prevent duplicates and memory leaks
     const tvBackground = "#131722";
     const tvGrid = "#242832";
     const tvText = "#d1d4dc";

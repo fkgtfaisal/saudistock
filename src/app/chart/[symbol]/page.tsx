@@ -600,7 +600,14 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
             <p className="text-sm font-bold text-muted-foreground">جاري تحميل بيانات الرسم البياني...</p>
           </div>
         ) : (
-          <ChartComponent data={chartData} symbol={symbol} indicators={indicators} chartType={chartType} showGrid={showGrid} />
+          <ChartComponent 
+            key={`${symbol}_${chartType}_${showGrid}`}
+            data={chartData} 
+            symbol={symbol} 
+            indicators={indicators} 
+            chartType={chartType} 
+            showGrid={showGrid} 
+          />
         )}
       </div>
 
