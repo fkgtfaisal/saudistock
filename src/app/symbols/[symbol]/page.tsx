@@ -476,7 +476,7 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
       {/* Main Responsive Grid */}
       <div className="flex-1 overflow-x-hidden">
         <div className={`${widthClass} py-4 md:py-6`}>
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col lg:flex-row-reverse gap-6">
             {/* Left Column: Chart + Insights */}
             <div className="flex-1 min-w-0 space-y-6">
               {/* Chart Component Wrapper */}
