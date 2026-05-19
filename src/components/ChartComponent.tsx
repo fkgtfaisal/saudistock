@@ -192,6 +192,7 @@ export function ChartComponent(props: {
     if (!chartContainerRef.current || !data || data.length === 0) return;
 
     const container = chartContainerRef.current;
+    container.innerHTML = ""; // Clear container to avoid duplicate chart containers in DOM
     const tvBackground = "#131722";
     const tvGrid = "#242832";
     const tvText = "#d1d4dc";
@@ -261,7 +262,11 @@ export function ChartComponent(props: {
     }
     candlestickSeriesRef.current = mainSeries;
     seriesRef.current.candlestick = mainSeries;
-    mainSeries.setData(data);
+    if (chartType === "line" || chartType === "area") {
+      mainSeries.setData(data.map(d => ({ time: d.time, value: d.close })));
+    } else {
+      mainSeries.setData(data);
+    }
 
     /** Volume integration inside Pane 0 (Overlay at bottom) */
     const hasVolume = data.some(d => typeof d.volume === "number");
