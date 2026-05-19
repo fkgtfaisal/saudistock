@@ -71,15 +71,25 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
   const [pickerSearch, setPickerSearch] = useState("");
   const [viewport, setViewport] = useState<"auto" | "desktop" | "laptop" | "tablet" | "mobile_ip" | "mobile_sa">("auto");
 
+  const prevMainPriceRef = useRef<number | null>(null);
+  const [mainPriceFlash, setMainPriceFlash] = useState<"up" | "down" | null>(null);
+
   // Fetch quote
   const loadQuote = useCallback(async () => {
     try {
-      setLoadingQuote(true);
+      if (!quote) setLoadingQuote(true);
       const q = await fetchQuote(symbol);
+      if (q && q.price !== null) {
+        if (prevMainPriceRef.current !== null && prevMainPriceRef.current !== q.price) {
+          setMainPriceFlash(q.price > prevMainPriceRef.current ? "up" : "down");
+          setTimeout(() => setMainPriceFlash(null), 1000);
+        }
+        prevMainPriceRef.current = q.price;
+      }
       setQuote(q);
     } catch { /* keep previous data */ }
     finally { setLoadingQuote(false); }
-  }, [symbol]);
+  }, [symbol, quote]);
 
   // Fetch chart
   const loadChart = useCallback(async () => {
@@ -178,11 +188,13 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
     }
   }, [activeTab, loadSummary, loadNews]);
 
-  // Auto-refresh quote every 60s
+  // Auto-refresh quote: 5s when market is open, 30s when closed for live real-time feel
   useEffect(() => {
-    const id = setInterval(loadQuote, 60_000);
+    const isMarketOpen = quote?.marketState === "REGULAR";
+    const intervalTime = isMarketOpen ? 5000 : 30000;
+    const id = setInterval(loadQuote, intervalTime);
     return () => clearInterval(id);
-  }, [loadQuote]);
+  }, [loadQuote, quote?.marketState]);
 
   // --- Watchlist Persistence ---
   const [isWatchlistLoaded, setIsWatchlistLoaded] = useState(false);
@@ -376,7 +388,12 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                 ) : (
                   <>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter">{formatPrice(quote?.price ?? null)}</span>
+                      <span className={`text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter transition-all duration-300 ${
+                        mainPriceFlash === "up" ? "bg-emerald-500/25 text-emerald-400 scale-105 rounded px-2" :
+                        mainPriceFlash === "down" ? "bg-rose-500/25 text-rose-400 scale-105 rounded px-2" : ""
+                      }`}>
+                        {formatPrice(quote?.price ?? null)}
+                      </span>
                       <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase">SAR</span>
                     </div>
                     <div className={`flex items-center justify-end gap-1 text-xs sm:text-sm font-bold ${isUp ? "text-success" : "text-destructive"}`}>
@@ -630,10 +647,11 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                   </button>
                 </div>
               )}
-              <div className="grid grid-cols-[1fr_60px_60px] gap-0 px-2 py-1 border-b border-border text-[10px] text-muted-foreground font-bold">
-                <span></span>
-                <span className="text-left" dir="ltr">السعر</span>
-                <span className="text-left" dir="ltr">%</span>
+              <div className="grid grid-cols-[1.2fr_60px_50px_50px] gap-0 px-2 py-1 border-b border-border text-[9px] text-muted-foreground font-bold bg-muted/5">
+                <span className="text-right">الرمز</span>
+                <span className="text-left">السعر</span>
+                <span className="text-left">التغيير</span>
+                <span className="text-left">التغير %</span>
               </div>
               <div className="flex-1 overflow-y-auto divide-y divide-border/50">
                 {watchlist.map((sym) => {
@@ -745,24 +763,61 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
 /* ── Sub Components ── */
 
 function WatchlistRow({ sym, nameAr, isCurrent, onRemove }: { sym: string; nameAr: string; isCurrent: boolean; onRemove: () => void }) {
-  const [q, setQ] = useState<{ price: number | null; changePercent: number | null; isUp: boolean } | null>(null);
+  const [q, setQ] = useState<{ price: number | null; change: number | null; changePercent: number | null; isUp: boolean } | null>(null);
+  const prevPriceRef = useRef<number | null>(null);
+  const [flash, setFlash] = useState<"up" | "down" | null>(null);
 
   useEffect(() => {
-    fetchQuote(sym)
-      .then((data) => setQ({ price: data.price, changePercent: data.changePercent, isUp: (data.changePercent ?? 0) >= 0 }))
-      .catch(() => {});
+    const loadData = () => {
+      fetchQuote(sym)
+        .then((data) => {
+          if (data.price !== null) {
+            if (prevPriceRef.current !== null && prevPriceRef.current !== data.price) {
+              setFlash(data.price > prevPriceRef.current ? "up" : "down");
+              setTimeout(() => setFlash(null), 800);
+            }
+            prevPriceRef.current = data.price;
+          }
+          setQ({
+            price: data.price,
+            change: data.change,
+            changePercent: data.changePercent,
+            isUp: (data.changePercent ?? 0) >= 0
+          });
+        })
+        .catch(() => {});
+    };
+
+    loadData();
+
+    // Poll every 5 seconds for live real-time price ticks
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, [sym]);
 
   return (
-    <div className={`group grid grid-cols-[1fr_60px_60px] gap-0 items-center px-2 py-1.5 text-xs transition-colors hover:bg-muted/30 relative ${isCurrent ? "bg-primary/5" : ""}`}>
+    <div className={`group grid grid-cols-[1.2fr_60px_50px_50px] gap-0 items-center px-2 py-1.5 text-xs transition-colors hover:bg-muted/30 relative ${isCurrent ? "bg-primary/5" : ""}`}>
       <Link href={`/symbols/${sym}`} className="min-w-0">
-        <span className={`font-bold truncate block ${isCurrent ? "text-primary" : ""}`}>{nameAr}</span>
-        <span className="text-muted-foreground text-[10px]">{sym}</span>
+        <span className={`font-bold truncate block ${isCurrent ? "text-primary text-[11px]" : "text-[11px]"}`}>{nameAr}</span>
+        <span className="text-muted-foreground text-[9px]">{sym}</span>
       </Link>
-      <span className="text-left font-bold" dir="ltr">{q ? formatPrice(q.price) : "—"}</span>
-      <span className={`text-left font-bold ${q?.isUp ? "text-success" : "text-destructive"}`} dir="ltr">
+      
+      {/* Price with tick animation flash background */}
+      <span className={`text-left font-bold text-[11px] transition-all duration-300 ${
+        flash === "up" ? "bg-emerald-500/25 text-emerald-400 scale-105 rounded px-1 animate-pulse" :
+        flash === "down" ? "bg-rose-500/25 text-rose-400 scale-105 rounded px-1 animate-pulse" : ""
+      }`} dir="ltr">
+        {q ? formatPrice(q.price) : "—"}
+      </span>
+
+      <span className={`text-left font-semibold text-[10px] ${q?.isUp ? "text-success" : "text-destructive"}`} dir="ltr">
+        {q ? formatChange(q.change) : "—"}
+      </span>
+      
+      <span className={`text-left font-bold text-[10px] ${q?.isUp ? "text-success" : "text-destructive"}`} dir="ltr">
         {q ? formatPercent(q.changePercent) : "—"}
       </span>
+      
       <button
         onClick={onRemove}
         className="absolute left-0 top-1/2 -translate-y-1/2 p-0.5 rounded bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
