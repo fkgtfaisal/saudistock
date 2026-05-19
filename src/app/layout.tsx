@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/components/AuthProvider";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export default function RootLayout({
   children,
@@ -43,6 +44,7 @@ export default function RootLayout({
             </p>
           </div>
         </footer>
+        <SpeedInsights />
       </body>
     </html>
   );
