@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight, ArrowDownRight, Search, LineChart, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchMarket,
   type MarketData,
@@ -30,6 +30,20 @@ function SkeletonRow() {
 }
 
 function TasiCard({ tasi }: { tasi: MarketData["tasi"] }) {
+  const prevPriceRef = useRef<number | null>(null);
+  const [flash, setFlash] = useState<"up" | "down" | null>(null);
+
+  useEffect(() => {
+    if (tasi?.price != null) {
+      if (prevPriceRef.current !== null && prevPriceRef.current !== tasi.price) {
+        setFlash(tasi.price > prevPriceRef.current ? "up" : "down");
+        const timer = setTimeout(() => setFlash(null), 800);
+        return () => clearTimeout(timer);
+      }
+      prevPriceRef.current = tasi.price;
+    }
+  }, [tasi?.price]);
+
   if (!tasi) return (
     <div className="bg-card border border-border p-6 rounded-xl">
       <h3 className="text-muted-foreground text-sm font-medium mb-1">المؤشر العام (TASI)</h3>
@@ -39,8 +53,15 @@ function TasiCard({ tasi }: { tasi: MarketData["tasi"] }) {
   return (
     <div className="bg-card border border-border p-6 rounded-xl">
       <h3 className="text-muted-foreground text-sm font-medium mb-1">المؤشر العام (TASI)</h3>
-      <p className="text-2xl font-bold" dir="ltr">{formatPrice(tasi.price, 2)}</p>
-      <p className={`text-sm font-bold mt-1 ${tasi.isUp ? "text-success" : "text-destructive"}`} dir="ltr">
+      <p className={`text-2xl font-bold transition-all duration-300 inline-block px-2 py-0.5 rounded ${
+        flash === "up" ? "bg-emerald-500/25 text-emerald-400 scale-105" :
+        flash === "down" ? "bg-rose-500/25 text-rose-400 scale-105" : ""
+      }`} dir="ltr">{formatPrice(tasi.price, 2)}</p>
+      <p className={`text-sm font-bold mt-1 transition-all duration-300 ${
+        flash === "up" ? "text-emerald-400" :
+        flash === "down" ? "text-rose-400" :
+        tasi.isUp ? "text-success" : "text-destructive"
+      }`} dir="ltr">
         {formatChange(tasi.change)} ({formatPercent(tasi.changePercent)})
       </p>
     </div>
@@ -58,6 +79,7 @@ export default function MarketSaudiPage() {
   const load = useCallback(async () => {
     try {
       setError(null);
+      if (!data) setLoading(true);
       const market = await fetchMarket();
       setData(market);
       setLastUpdate(new Date());
@@ -66,16 +88,18 @@ export default function MarketSaudiPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [data]);
 
   // Initial load
   useEffect(() => { load(); }, [load]);
 
-  // Auto-refresh every 60 seconds
+  // Auto-refresh: 5s when market is open, 30s when closed for live real-time feel
   useEffect(() => {
-    const id = setInterval(load, 60_000);
+    const isMarketOpen = data?.tasi?.marketState === "REGULAR";
+    const intervalTime = isMarketOpen ? 5000 : 30000;
+    const id = setInterval(load, intervalTime);
     return () => clearInterval(id);
-  }, [load]);
+  }, [load, data?.tasi?.marketState]);
 
   const stocks: MarketStock[] = data?.stocks ?? [];
 
@@ -229,64 +253,7 @@ export default function MarketSaudiPage() {
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 : paginatedStocks.map((stock) => (
-                    <tr key={stock.symbol} className="hover:bg-muted/10 transition-colors group">
-                      <td className="p-4">
-                        <Link
-                          href={`/symbols/${stock.symbol}`}
-                          className="font-mono font-bold text-primary hover:underline"
-                        >
-                          {stock.symbol}
-                        </Link>
-                      </td>
-                      <td className="p-4">
-                        <Link
-                          href={`/symbols/${stock.symbol}`}
-                          className="font-bold hover:text-primary transition-colors"
-                        >
-                          {stock.nameAr}
-                        </Link>
-                        <p className="text-xs text-muted-foreground mt-0.5">{stock.nameEn}</p>
-                      </td>
-                      <td className="p-4 text-muted-foreground text-xs">{stock.sector}</td>
-                      <td className="p-4 font-bold" dir="ltr">
-                        {stock.error ? (
-                          <span className="text-muted-foreground text-xs">خطأ</span>
-                        ) : (
-                          formatPrice(stock.price)
-                        )}
-                      </td>
-                      <td className="p-4" dir="ltr">
-                        {!stock.error && (
-                          <span
-                            className={`inline-flex items-center gap-1 font-bold ${
-                              stock.isUp ? "text-success" : "text-destructive"
-                            }`}
-                          >
-                            {stock.isUp ? (
-                              <ArrowUpRight className="h-3 w-3" />
-                            ) : (
-                              <ArrowDownRight className="h-3 w-3" />
-                            )}
-                            {formatChange(stock.change)} ({formatPercent(stock.changePercent)})
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4 text-muted-foreground" dir="ltr">
-                        {formatVolume(stock.volume)}
-                      </td>
-                      <td className="p-4 text-muted-foreground" dir="ltr">
-                        {formatMarketCap(stock.marketCap)}
-                      </td>
-                      <td className="p-4">
-                        <Link
-                          href={`/chart/${stock.symbol}`}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold text-primary hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <LineChart className="h-3 w-3" />
-                          رسم
-                        </Link>
-                      </td>
-                    </tr>
+                    <MarketStockRow key={stock.symbol} stock={stock} />
                   ))}
               {!loading && filteredStocks.length === 0 && (
                 <tr>
@@ -370,5 +337,89 @@ export default function MarketSaudiPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function MarketStockRow({ stock }: { stock: MarketStock }) {
+  const prevPriceRef = useRef<number | null>(null);
+  const [flash, setFlash] = useState<"up" | "down" | null>(null);
+
+  useEffect(() => {
+    if (stock.price !== null) {
+      if (prevPriceRef.current !== null && prevPriceRef.current !== stock.price) {
+        setFlash(stock.price > prevPriceRef.current ? "up" : "down");
+        const timer = setTimeout(() => setFlash(null), 800);
+        return () => clearTimeout(timer);
+      }
+      prevPriceRef.current = stock.price;
+    }
+  }, [stock.price]);
+
+  return (
+    <tr className="hover:bg-muted/10 transition-colors group">
+      <td className="p-4">
+        <Link
+          href={`/symbols/${stock.symbol}`}
+          className="font-mono font-bold text-primary hover:underline"
+        >
+          {stock.symbol}
+        </Link>
+      </td>
+      <td className="p-4">
+        <Link
+          href={`/symbols/${stock.symbol}`}
+          className="font-bold hover:text-primary transition-colors"
+        >
+          {stock.nameAr}
+        </Link>
+        <p className="text-xs text-muted-foreground mt-0.5">{stock.nameEn}</p>
+      </td>
+      <td className="p-4 text-muted-foreground text-xs">{stock.sector}</td>
+      <td className="p-4 font-bold transition-all duration-300" dir="ltr">
+        {stock.error ? (
+          <span className="text-muted-foreground text-xs">خطأ</span>
+        ) : (
+          <span className={`transition-all duration-300 px-2 py-0.5 rounded ${
+            flash === "up" ? "bg-emerald-500/25 text-emerald-400 scale-105 inline-block" :
+            flash === "down" ? "bg-rose-500/25 text-rose-400 scale-105 inline-block" : ""
+          }`}>
+            {formatPrice(stock.price)}
+          </span>
+        )}
+      </td>
+      <td className="p-4 transition-all duration-300" dir="ltr">
+        {!stock.error && (
+          <span
+            className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded transition-all duration-300 ${
+              flash === "up" ? "bg-emerald-500/25 text-emerald-400 scale-105" :
+              flash === "down" ? "bg-rose-500/25 text-rose-400 scale-105" :
+              stock.isUp ? "text-success" : "text-destructive"
+            }`}
+          >
+            {stock.isUp ? (
+              <ArrowUpRight className="h-3 w-3" />
+            ) : (
+              <ArrowDownRight className="h-3 w-3" />
+            )}
+            {formatChange(stock.change)} ({formatPercent(stock.changePercent)})
+          </span>
+        )}
+      </td>
+      <td className="p-4 text-muted-foreground" dir="ltr">
+        {formatVolume(stock.volume)}
+      </td>
+      <td className="p-4 text-muted-foreground" dir="ltr">
+        {formatMarketCap(stock.marketCap)}
+      </td>
+      <td className="p-4">
+        <Link
+          href={`/chart/${stock.symbol}`}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold text-primary hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100"
+        >
+          <LineChart className="h-3 w-3" />
+          رسم
+        </Link>
+      </td>
+    </tr>
   );
 }
