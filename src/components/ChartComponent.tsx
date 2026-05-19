@@ -586,7 +586,7 @@ export function ChartComponent(props: {
       candlestickSeriesRef.current = null;
       seriesRef.current = {};
     };
-  }, [data, indicators]);
+  }, [data, indicators, chartType, showGrid]);
 
   const tools: { id: DrawingTool; icon: React.ReactNode; label: string }[] = [
     { id: "none", icon: <MousePointer2 className="h-4 w-4" />, label: "مؤشر" },

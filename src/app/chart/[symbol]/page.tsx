@@ -491,7 +491,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
                     {(["candles", "line", "area"] as const).map((style) => (
                       <button
                         key={style}
-                        onClick={() => { setChartType(style); setShowSettingsDropdown(false); }}
+                        onClick={() => setChartType(style)}
                         className={`py-1 text-[10px] font-bold rounded border transition-colors ${chartType === style ? "bg-primary/20 border-primary text-primary" : "border-border hover:bg-muted text-foreground"}`}
                       >
                         {style === "candles" ? "شموع" : style === "line" ? "خطي" : "مساحة"}
@@ -502,7 +502,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
 
                 {/* Show/Hide Grid */}
                 <button
-                  onClick={() => { setShowGrid(!showGrid); setShowSettingsDropdown(false); }}
+                  onClick={() => setShowGrid(!showGrid)}
                   className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-bold hover:bg-muted rounded text-right transition-colors"
                 >
                   <span className="text-foreground">إظهار الشبكة البيانية</span>
