@@ -86,9 +86,9 @@ export default function SubscriptionsPage() {
           </button>
         </div>
 
-        {/* Premium Plan */}
+        {/* Elite Plan */}
         <div className="bg-card border border-border rounded-2xl p-8 flex flex-col">
-          <h3 className="text-2xl font-bold mb-2">المميزة (Premium)</h3>
+          <h3 className="text-2xl font-bold mb-2">النخبة (Elite)</h3>
           <p className="text-muted-foreground mb-6">للمحترفين وصناديق الاستثمار وقادة التحليل.</p>
           <div className="mb-8">
             <span className="text-4xl font-extrabold">٢٤٩</span>
@@ -101,7 +101,7 @@ export default function SubscriptionsPage() {
             </li>
             <li className="flex items-start gap-3">
               <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-              <span className="font-bold text-foreground">تحليل الذكاء الاصطناعي للأسهم (قريباً)</span>
+              <span className="font-bold text-foreground">تحليل الذكاء الاصطناعي للأسهم</span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
@@ -117,7 +117,7 @@ export default function SubscriptionsPage() {
             </li>
           </ul>
           <button className="w-full bg-muted text-foreground font-bold py-3 rounded-lg hover:bg-muted/80 transition-colors">
-            الترقية إلى Premium
+            الترقية إلى Elite
           </button>
         </div>
 

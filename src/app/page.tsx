@@ -158,10 +158,10 @@ export default function LandingPage() {
               highlighted={true}
             />
             <PricingCard 
-              title="المميزة (Premium)"
+              title="النخبة (Elite)"
               price="٢٤٩ ريال / شهر"
               features={["جميع ميزات Pro", "تحليل الذكاء الاصطناعي", "اختبار الاستراتيجيات (Backtesting)", "تقارير PDF مخصصة"]}
-              cta="اشترك في Premium"
+              cta="اشترك في Elite"
             />
           </div>
         </div>

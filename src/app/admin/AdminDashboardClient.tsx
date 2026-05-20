@@ -919,7 +919,7 @@ export default function AdminDashboardClient({
                 <h3 className="text-xl font-black mb-1 text-amber-500">باقة النخبة (ELITE)</h3>
                 <span className="text-xs text-muted-foreground mb-4">للشركاء ومسؤولي الإدارة العليا</span>
                 <div className="flex items-baseline gap-1.5 mb-6">
-                  <span className="text-4xl font-black text-foreground">499</span>
+                  <span className="text-4xl font-black text-foreground">249</span>
                   <span className="text-sm font-bold text-muted-foreground">ريال / شهرياً</span>
                 </div>
                 <ul className="text-xs font-bold text-muted-foreground space-y-3 mb-8">
