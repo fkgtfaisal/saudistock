@@ -149,12 +149,14 @@ export default function LandingPage() {
               price="مجاناً"
               features={["قائمة مراقبة واحدة", "رسوم بيانية أساسية", "بيانات نهاية اليوم", "أخبار السوق"]}
               cta="سجل الآن"
+              href="/register"
             />
             <PricingCard 
               title="الاحترافية (Pro)"
               price="٩٩ ريال / شهر"
               features={["قوائم مراقبة غير محدودة", "فلاتر متقدمة", "حفظ قوالب الرسم البياني", "تصدير البيانات", "تنبيهات لا محدودة"]}
               cta="اشترك في Pro"
+              href="/subscriptions"
               highlighted={true}
             />
             <PricingCard 
@@ -162,6 +164,7 @@ export default function LandingPage() {
               price="٢٤٩ ريال / شهر"
               features={["جميع ميزات Pro", "تحليل الذكاء الاصطناعي", "اختبار الاستراتيجيات (Backtesting)", "تقارير PDF مخصصة"]}
               cta="اشترك في Elite"
+              href="/subscriptions"
             />
           </div>
         </div>
@@ -175,9 +178,9 @@ export default function LandingPage() {
           <p className="text-primary-foreground/80 mb-10 max-w-2xl mx-auto text-base md:text-lg">
             انضم إلى آلاف المتداولين والمستثمرين الذين يعتمدون على منصتنا يومياً لاتخاذ قراراتهم في السوق السعودي.
           </p>
-          <button className="bg-background text-foreground px-8 md:px-10 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg hover:bg-background/90 transition-all shadow-lg active:scale-95">
+          <Link href="/register" className="inline-block bg-background text-foreground px-8 md:px-10 py-3 md:py-4 rounded-xl font-bold text-base md:text-lg hover:bg-background/90 transition-all shadow-lg active:scale-95 text-center">
             أنشئ حسابك مجاناً
-          </button>
+          </Link>
         </div>
       </section>
     </div>
@@ -264,7 +267,7 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
   );
 }
 
-function PricingCard({ title, price, features, cta, highlighted = false }: { title: string, price: string, features: string[], cta: string, highlighted?: boolean }) {
+function PricingCard({ title, price, features, cta, href = "/subscriptions", highlighted = false }: { title: string, price: string, features: string[], cta: string, href?: string, highlighted?: boolean }) {
   return (
     <div className={`p-8 rounded-2xl border ${highlighted ? 'border-primary bg-primary/5 relative' : 'border-border bg-card'}`}>
       {highlighted && (
@@ -284,9 +287,9 @@ function PricingCard({ title, price, features, cta, highlighted = false }: { tit
           </li>
         ))}
       </ul>
-      <button className={`w-full py-3 rounded-lg font-bold transition-colors ${highlighted ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-foreground hover:bg-muted/80'}`}>
+      <Link href={href} className={`block text-center w-full py-3 rounded-lg font-bold transition-colors ${highlighted ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-foreground hover:bg-muted/80'}`}>
         {cta}
-      </button>
+      </Link>
     </div>
   );
 }
