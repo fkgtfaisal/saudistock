@@ -61,11 +61,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         // @ts-ignore - custom property
         token.subscriptionTier = user.subscriptionTier;
+      }
+      if (trigger === "update" && (session as any)?.user) {
+        // @ts-ignore
+        token.subscriptionTier = session.user.subscriptionTier;
       }
       return token;
     },
