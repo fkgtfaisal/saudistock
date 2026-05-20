@@ -109,7 +109,7 @@ export default function SubscriptionsPage() {
         {/* Free Plan */}
         <div className={`bg-card border rounded-2xl p-8 flex flex-col transition-all relative overflow-hidden ${
           currentTier === "FREE" 
-            ? "border-primary/40 ring-1 ring-primary/20 shadow-xl shadow-primary/5" 
+            ? "border-primary ring-2 ring-primary/30 shadow-2xl shadow-primary/10" 
             : "border-border hover:border-slate-800"
         }`}>
           {currentTier === "FREE" && (
@@ -175,8 +175,8 @@ export default function SubscriptionsPage() {
         {/* Pro Plan */}
         <div className={`bg-card border rounded-2xl p-8 flex flex-col transition-all relative overflow-hidden ${
           currentTier === "PRO" 
-            ? "border-primary ring-2 ring-primary/30 shadow-2xl shadow-primary/10" 
-            : "border-primary/50 shadow-lg shadow-primary/5 hover:border-primary transition-all duration-300 md:-translate-y-4"
+            ? "border-primary ring-2 ring-primary/30 shadow-2xl shadow-primary/10 md:-translate-y-4" 
+            : "border-border hover:border-slate-800 transition-all duration-300 md:-translate-y-4"
         }`}>
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-b-xl text-[10px] font-black tracking-wider uppercase">
             {currentTier === "PRO" ? "الباقة النشطة حالياً" : "الأكثر شعبية"}
