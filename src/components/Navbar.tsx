@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
@@ -25,7 +25,12 @@ export function Navbar() {
     stock.nameEn?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const isAdmin = (session?.user as any)?.subscriptionTier === "ELITE";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAdmin = mounted && (session?.user as any)?.subscriptionTier === "ELITE";
 
   const navLinks = [
     { href: "/", label: "الرئيسية", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -119,7 +124,9 @@ export function Navbar() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {session ? (
+          {!mounted ? (
+            <div className="w-20 h-8" />
+          ) : session ? (
             <>
               <span className="hidden sm:inline-block text-sm font-bold text-primary">
                 مرحباً، {session.user?.name || 'مستخدم'}
@@ -175,7 +182,9 @@ export function Navbar() {
               </Link>
             ))}
             <div className="mt-auto pt-6 border-t border-border flex flex-col gap-3">
-              {session ? (
+              {!mounted ? (
+                <div className="w-full h-10" />
+              ) : session ? (
                 <>
                   <div className="text-center py-2 text-sm text-primary font-bold">
                     مرحباً، {session.user?.name}
