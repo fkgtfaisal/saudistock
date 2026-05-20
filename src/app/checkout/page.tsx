@@ -23,6 +23,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [amount, setAmount] = useState(0);
   const [description, setDescription] = useState("");
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -53,24 +54,28 @@ export default function CheckoutPage() {
     setDescription(desc);
   }, [tier, cycle, status, router]);
 
-  const initMoyasar = () => {
-    if (!amount || !window.Moyasar) return;
+  useEffect(() => {
+    if (amount > 0 && scriptLoaded && typeof window !== "undefined" && window.Moyasar) {
+      // Check if it's already initialized
+      const formContainer = document.querySelector(".mysr-form");
+      if (formContainer && formContainer.innerHTML.trim() !== "") return;
 
-    window.Moyasar.init({
-      element: ".mysr-form",
-      amount: amount,
-      currency: "SAR",
-      description: description,
-      publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_vgXbZ...", // Use env or fallback for testing
-      callback_url: `${window.location.origin}/checkout/callback?tier=${tier}&cycle=${cycle}`,
-      methods: ["creditcard", "stcpay", "applepay"],
-      metadata: {
-        userId: session?.user?.id,
-        tier: tier,
-        cycle: cycle
-      }
-    });
-  };
+      window.Moyasar.init({
+        element: ".mysr-form",
+        amount: amount,
+        currency: "SAR",
+        description: description,
+        publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_vgXbZ...", // Use env or fallback for testing
+        callback_url: `${window.location.origin}/checkout/callback?tier=${tier}&cycle=${cycle}`,
+        methods: ["creditcard", "stcpay", "applepay"],
+        metadata: {
+          userId: session?.user?.id,
+          tier: tier,
+          cycle: cycle
+        }
+      });
+    }
+  }, [amount, scriptLoaded, description, tier, cycle, session]);
 
   if (!mounted || status === "loading" || !amount) {
     return (
@@ -88,7 +93,7 @@ export default function CheckoutPage() {
       <Script 
         src="https://cdn.moyasar.com/mpf/1.14.0/moyasar.js" 
         strategy="lazyOnload"
-        onLoad={initMoyasar}
+        onLoad={() => setScriptLoaded(true)}
       />
 
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
