@@ -9,9 +9,14 @@ export default function SubscriptionsPage() {
   const { data: session, update } = useSession();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Active subscription tier in database (fallback to session)
-  const currentTier = (session?.user as any)?.subscriptionTier || "FREE";
+  const currentTier = mounted ? ((session?.user as any)?.subscriptionTier || "FREE") : "FREE";
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -124,6 +129,10 @@ export default function SubscriptionsPage() {
           <ul className="space-y-4 mb-8 flex-1 text-sm text-slate-300">
             <li className="flex items-start gap-3">
               <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
+              <span>مستخدم واحد (حساب شخصي)</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
               <span>قائمة مراقبة واحدة (حتى 20 سهم)</span>
             </li>
             <li className="flex items-start gap-3">
@@ -186,6 +195,10 @@ export default function SubscriptionsPage() {
           </div>
 
           <ul className="space-y-4 mb-8 flex-1 text-sm text-slate-200">
+            <li className="flex items-start gap-3">
+              <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
+              <span className="font-bold">إمكانية إضافة حتى 3 مستخدمين فرعيين</span>
+            </li>
             <li className="flex items-start gap-3">
               <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
               <span className="font-bold">قوائم مراقبة متعددة ولا محدودة</span>
@@ -253,6 +266,10 @@ export default function SubscriptionsPage() {
             <li className="flex items-start gap-3">
               <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
               <span>جميع مميزات باقة Pro الاحترافية</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
+              <span className="font-bold text-foreground">حسابات متعددة لـ 8 مستخدمين</span>
             </li>
             <li className="flex items-start gap-3">
               <Check className="h-4.5 w-4.5 text-primary flex-shrink-0 mt-0.5" />
