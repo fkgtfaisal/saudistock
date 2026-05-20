@@ -1,6 +1,15 @@
 import { Activity, AlertTriangle, FileText, LayoutDashboard, Settings, Users, Database, Zap } from "lucide-react";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const session = await auth();
+
+  // التحقق من صلاحيات مدير النظام (ELITE)
+  if (!session || (session.user as any)?.subscriptionTier !== "ELITE") {
+    redirect("/");
+  }
+
   return (
     <div className="flex h-[calc(100vh-64px)]">
       {/* Sidebar Admin Navigation */}

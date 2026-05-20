@@ -25,6 +25,8 @@ export function Navbar() {
     stock.nameEn?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const isAdmin = (session?.user as any)?.subscriptionTier === "ELITE";
+
   const navLinks = [
     { href: "/", label: "الرئيسية", icon: <LayoutDashboard className="h-4 w-4" /> },
     { href: "/markets/saudi", label: "السوق", icon: <Globe className="h-4 w-4" /> },
@@ -34,7 +36,7 @@ export function Navbar() {
     { href: "/community", label: "المجتمع", icon: <Users className="h-4 w-4" /> },
     { href: "/ai-analysis", label: "تحليل AI", icon: <Zap className="h-4 w-4" /> },
     { href: "/subscriptions", label: "الاشتراكات", icon: <Shield className="h-4 w-4" /> },
-    { href: "/admin", label: "الإدارة", icon: <Settings className="h-4 w-4 text-destructive" /> },
+    ...(isAdmin ? [{ href: "/admin", label: "الإدارة", icon: <Settings className="h-4 w-4 text-destructive" /> }] : []),
   ];
 
   return (
