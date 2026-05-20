@@ -4,14 +4,14 @@ import { auth } from '@/auth'
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const postId = params.id
+    const { id: postId } = await params
 
     const post = await prisma.post.findUnique({
       where: { id: postId }

@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -12,7 +12,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const userId = session.user.id
-    const postId = params.id
+    const { id: postId } = await params
 
     const { content } = await request.json()
     if (!content) {

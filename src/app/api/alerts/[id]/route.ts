@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -12,7 +12,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const userId = session.user.id
-    const { id } = params
+    const { id } = await params
 
     // Verify ownership before delete
     const alert = await prisma.alert.findUnique({
@@ -40,7 +40,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth()
@@ -48,7 +48,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const userId = session.user.id
-    const { id } = params
+    const { id } = await params
     const { status } = await request.json()
 
     const alert = await prisma.alert.findUnique({
