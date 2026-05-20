@@ -13,11 +13,15 @@ model User {
   name             String?
   password         String?           // Added for NextAuth Credentials
   subscriptionTier String            @default("FREE") // FREE, PRO, ELITE
+  balance          Float             @default(100000) // Virtual balance for paper trading
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   watchlists       Watchlist[]
   chartLayouts     ChartLayout[]
   portfolios       Portfolio[]
+  alerts           Alert[]
+  posts            Post[]
+  comments         Comment[]
 }
 
 model Watchlist {
@@ -75,3 +79,40 @@ model PortfolioItem {
 
   @@unique([portfolioId, symbol])
 }
+
+model Alert {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  type      String   // PRICE_ABOVE, PRICE_BELOW, RSI_ABOVE, RSI_BELOW, VOLUME_ABOVE
+  value     Float
+  status    String   @default("ACTIVE") // ACTIVE, TRIGGERED, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  content    String
+  symbol     String?   // Tagged stock (e.g. 1120.SR)
+  action     String?   // BUY, SELL, HOLD, EDUCATIONAL
+  likesCount Int       @default(0)
+  comments   Comment[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+

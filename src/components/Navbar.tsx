@@ -37,6 +37,7 @@ export function Navbar() {
     { href: "/markets/saudi", label: "السوق", icon: <Globe className="h-4 w-4" /> },
     { href: "/screener", label: "الفلاتر", icon: <Filter className="h-4 w-4" /> },
     { href: "/watchlists", label: "المراقبة", icon: <Bell className="h-4 w-4" /> },
+    { href: "/portfolio", label: "المحفظة", icon: <BarChart3 className="h-4 w-4" /> },
     { href: "/news", label: "الأخبار", icon: <Newspaper className="h-4 w-4" /> },
     { href: "/community", label: "المجتمع", icon: <Users className="h-4 w-4" /> },
     { href: "/ai-analysis", label: "تحليل AI", icon: <Zap className="h-4 w-4" /> },
