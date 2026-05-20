@@ -65,9 +65,9 @@ function CheckoutContent() {
         amount: amount,
         currency: "SAR",
         description: description,
-        publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_vgXbZ...", // Use env or fallback for testing
+        publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_vgXbZ", // MUST BE REPLACED IN VERCEL
         callback_url: `${window.location.origin}/checkout/callback?tier=${tier}&cycle=${cycle}`,
-        methods: ["creditcard", "stcpay", "applepay"],
+        methods: ["creditcard", "stcpay"], // Apple Pay removed until merchant validation is configured
         metadata: {
           userId: session?.user?.id,
           tier: tier,
