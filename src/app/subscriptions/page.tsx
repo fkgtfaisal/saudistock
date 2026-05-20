@@ -112,21 +112,23 @@ export default function SubscriptionsPage() {
 
         {/* Billing Toggle */}
         <div className="flex justify-center">
-          <div className="bg-slate-900/50 p-1.5 rounded-2xl border border-border inline-flex relative">
+          <div className="bg-slate-900/50 p-1.5 rounded-2xl border border-border relative inline-block">
             <div className={`absolute inset-y-1.5 w-[calc(50%-6px)] bg-primary rounded-xl transition-all duration-300 shadow-sm ${billingCycle === "monthly" ? "right-1.5" : "left-1.5"}`} />
-            <button
-              onClick={() => setBillingCycle("monthly")}
-              className={`relative z-10 px-6 py-2.5 text-sm font-bold rounded-xl transition-colors ${billingCycle === "monthly" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              دفع شهري
-            </button>
-            <button
-              onClick={() => setBillingCycle("yearly")}
-              className={`relative z-10 px-6 py-2.5 text-sm font-bold rounded-xl transition-colors flex items-center gap-2 ${billingCycle === "yearly" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              دفع سنوي
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${billingCycle === "yearly" ? "bg-white/20 text-white" : "bg-primary/20 text-primary"}`}>توفير ٢٠٪</span>
-            </button>
+            <div className="grid grid-cols-2 relative z-10">
+              <button
+                onClick={() => setBillingCycle("monthly")}
+                className={`px-8 py-3 text-sm font-bold rounded-xl transition-colors flex items-center justify-center ${billingCycle === "monthly" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                دفع شهري
+              </button>
+              <button
+                onClick={() => setBillingCycle("yearly")}
+                className={`px-8 py-3 text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 ${billingCycle === "yearly" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                دفع سنوي
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${billingCycle === "yearly" ? "bg-white/20 text-white" : "bg-primary/20 text-primary"}`}>توفير ٢٠٪</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
