@@ -10,6 +10,7 @@ export default function SubscriptionsPage() {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
 
   useEffect(() => {
     setMounted(true);
@@ -39,6 +40,12 @@ export default function SubscriptionsPage() {
 
     if (currentTier === targetTier) {
       showToast("أنت مشترك بالفعل في هذه الباقة.", "success");
+      return;
+    }
+
+    if (targetTier !== "FREE") {
+      setLoadingTier(targetTier);
+      window.location.href = `/checkout?tier=${targetTier}&cycle=${billingCycle}`;
       return;
     }
 
@@ -99,9 +106,29 @@ export default function SubscriptionsPage() {
         <h1 className="text-4xl font-black mb-4 bg-gradient-to-l from-white to-slate-400 bg-clip-text text-transparent">
           اختر باقة تداولك الذكية
         </h1>
-        <p className="text-muted-foreground text-base max-w-2xl mx-auto">
+        <p className="text-muted-foreground text-base max-w-2xl mx-auto mb-8">
           احصل على تحليلات متقدمة مدعومة بالذكاء الاصطناعي، واختبر استراتيجياتك التاريخية فورياً، وفعّل تنبيهات الأسعار اللحظية.
         </p>
+
+        {/* Billing Toggle */}
+        <div className="flex justify-center">
+          <div className="bg-slate-900/50 p-1.5 rounded-2xl border border-border inline-flex relative">
+            <div className={`absolute inset-y-1.5 w-[calc(50%-6px)] bg-primary rounded-xl transition-all duration-300 shadow-sm ${billingCycle === "monthly" ? "right-1.5" : "left-1.5"}`} />
+            <button
+              onClick={() => setBillingCycle("monthly")}
+              className={`relative z-10 px-6 py-2.5 text-sm font-bold rounded-xl transition-colors ${billingCycle === "monthly" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              دفع شهري
+            </button>
+            <button
+              onClick={() => setBillingCycle("yearly")}
+              className={`relative z-10 px-6 py-2.5 text-sm font-bold rounded-xl transition-colors flex items-center gap-2 ${billingCycle === "yearly" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              دفع سنوي
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${billingCycle === "yearly" ? "bg-white/20 text-white" : "bg-primary/20 text-primary"}`}>توفير ٢٠٪</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
@@ -189,9 +216,9 @@ export default function SubscriptionsPage() {
           <p className="text-muted-foreground text-sm mb-6">للمتداولين النشطين الباحثين عن أدوات تحليل فنية متقدمة وفلاتر قوية.</p>
           
           <div className="mb-8">
-            <span className="text-4xl font-extrabold text-foreground font-mono">٩٩</span>
-            <span className="text-muted-foreground text-sm"> ريال / شهر</span>
-            <p className="text-[11px] text-primary font-black mt-2">أو ٩٩٠ ريال سنوياً (توفير ٢٠٪)</p>
+            <span className="text-4xl font-extrabold text-foreground font-mono">{billingCycle === "monthly" ? "٩٩" : "٩٩٠"}</span>
+            <span className="text-muted-foreground text-sm"> ريال / {billingCycle === "monthly" ? "شهر" : "سنة"}</span>
+            {billingCycle === "monthly" && <p className="text-[11px] text-primary font-black mt-2">أو ٩٩٠ ريال سنوياً (توفير ٢٠٪)</p>}
           </div>
 
           <ul className="space-y-4 mb-8 flex-1 text-sm text-slate-200">
@@ -258,8 +285,9 @@ export default function SubscriptionsPage() {
           <p className="text-muted-foreground text-sm mb-6">للمحترفين وصناديق الاستثمار وقادة التحليل المالي المتكامل.</p>
           
           <div className="mb-8">
-            <span className="text-4xl font-extrabold text-foreground font-mono">٢٤٩</span>
-            <span className="text-muted-foreground text-sm"> ريال / شهر</span>
+            <span className="text-4xl font-extrabold text-foreground font-mono">{billingCycle === "monthly" ? "٢٤٩" : "٢٤٩٠"}</span>
+            <span className="text-muted-foreground text-sm"> ريال / {billingCycle === "monthly" ? "شهر" : "سنة"}</span>
+            {billingCycle === "monthly" && <p className="text-[11px] text-primary font-black mt-2">أو ٢٤٩٠ ريال سنوياً (توفير ٢٠٪)</p>}
           </div>
 
           <ul className="space-y-4 mb-8 flex-1 text-sm text-slate-300">

@@ -12,16 +12,20 @@ model User {
   email            String            @unique
   name             String?
   password         String?           // Added for NextAuth Credentials
-  subscriptionTier String            @default("FREE") // FREE, PRO, ELITE
-  balance          Float             @default(100000) // Virtual balance for paper trading
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  watchlists       Watchlist[]
-  chartLayouts     ChartLayout[]
-  portfolios       Portfolio[]
-  alerts           Alert[]
-  posts            Post[]
-  comments         Comment[]
+  subscriptionTier      String            @default("FREE") // FREE, PRO, ELITE
+  subscriptionStatus    String            @default("INACTIVE") // ACTIVE, INACTIVE
+  subscriptionPeriodEnd DateTime?
+  lastPaymentId         String?
+  balance               Float             @default(100000) // Virtual balance for paper trading
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  watchlists            Watchlist[]
+  chartLayouts          ChartLayout[]
+  portfolios            Portfolio[]
+  alerts                Alert[]
+  posts                 Post[]
+  comments              Comment[]
+  payments              Payment[]
 }
 
 model Watchlist {
@@ -116,3 +120,16 @@ model Comment {
   createdAt DateTime @default(now())
 }
 
+model Payment {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Float
+  currency  String   @default("SAR")
+  status    String   // paid, failed, initiated
+  moyasarId String?  @unique
+  tier      String   // PRO, ELITE
+  period    String   // MONTHLY, YEARLY
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
