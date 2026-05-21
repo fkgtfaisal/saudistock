@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Shield, Loader2, CreditCard } from "lucide-react";
 import Script from "next/script";
+import { getMoyasarKeysAction } from "./actions";
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ function CheckoutContent() {
   const [amount, setAmount] = useState(0);
   const [description, setDescription] = useState("");
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [publishableKey, setPublishableKey] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -52,10 +54,16 @@ function CheckoutContent() {
 
     setAmount(calculatedAmount * 100); // Convert SAR to Halalas
     setDescription(desc);
+
+    // Fetch key dynamically to bypass Next.js build caching
+    getMoyasarKeysAction().then((res) => {
+      setPublishableKey(res.publishableKey);
+    });
+
   }, [tier, cycle, status, router]);
 
   useEffect(() => {
-    if (amount > 0 && scriptLoaded && typeof window !== "undefined" && window.Moyasar) {
+    if (amount > 0 && scriptLoaded && publishableKey && typeof window !== "undefined" && window.Moyasar) {
       // Check if it's already initialized
       const formContainer = document.querySelector(".mysr-form");
       if (formContainer && formContainer.innerHTML.trim() !== "") return;
@@ -65,7 +73,7 @@ function CheckoutContent() {
         amount: amount,
         currency: "SAR",
         description: description,
-        publishable_api_key: process.env.NEXT_PUBLIC_MOYASAR_PUBLISHABLE_KEY || "pk_test_vgXbZ", // MUST BE REPLACED IN VERCEL
+        publishable_api_key: publishableKey,
         callback_url: `${window.location.origin}/checkout/callback?tier=${tier}&cycle=${cycle}`,
         methods: ["creditcard", "stcpay"], // Apple Pay removed until merchant validation is configured
         metadata: {
