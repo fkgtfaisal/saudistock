@@ -553,6 +553,18 @@ export default function ScreenerPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<ToastType>("success");
 
+  // Cloud Screeners
+  const [dbScreeners, setDbScreeners] = useState<{id: string, name: string, criteria: any}[]>([]);
+
+  useEffect(() => {
+    fetch("/api/screeners")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setDbScreeners(data);
+      })
+      .catch(console.error);
+  }, []);
+
   const showToast = (
     message: string,
     type: ToastType = "success"
@@ -826,44 +838,36 @@ export default function ScreenerPage() {
     showToast("تم تصدير ملف البيانات بنجاح بصيغة CSV.");
   };
 
-  const handleSaveFilters = () => {
+  const handleSaveFilters = async () => {
+    if (filters.length === 0) {
+      showToast("لا توجد فلاتر نشطة لحفظها.", "error");
+      return;
+    }
+
+    const name = window.prompt("أدخل اسماً مميزاً لهذا الفلتر (مثال: أسهم الانفجار السعري):");
+    if (!name?.trim()) return;
+
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
-      showToast("تم حفظ الفلاتر النشطة في متصفحك.");
+      const res = await fetch("/api/screeners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), criteria: filters }),
+      });
+
+      if (res.ok) {
+        const newScreener = await res.json();
+        // Update local state so it appears in dropdown immediately
+        setDbScreeners(prev => {
+          const filtered = prev.filter(s => s.name !== newScreener.name);
+          return [newScreener, ...filtered];
+        });
+        showToast("تم حفظ الفلتر بنجاح في حسابك السحابي! ☁️");
+      } else {
+        showToast("فشل الحفظ في السحابة.", "error");
+      }
     } catch (error) {
       console.error("Failed to save filters:", error);
-      showToast("فشل حفظ الفلاتر في المتصفح.", "error");
-    }
-  };
-
-  const handleLoadSavedFilters = () => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-
-      if (!saved) {
-        showToast("لا توجد فلاتر محفوظة مسبقاً.", "info");
-        return;
-      }
-
-      const parsed = JSON.parse(saved);
-
-      if (!Array.isArray(parsed)) {
-        showToast("بيانات الفلاتر المحفوظة غير صالحة.", "error");
-        return;
-      }
-
-      const validFilters = parsed.filter(isValidFilterCondition);
-
-      if (validFilters.length === 0) {
-        showToast("لا توجد فلاتر صالحة محفوظة.", "info");
-        return;
-      }
-
-      setFilters(validFilters);
-      showToast("تمت استعادة الفلاتر المحفوظة بنجاح.");
-    } catch (error) {
-      console.error("Failed to restore filters:", error);
-      showToast("فشل استعادة الفلاتر بسبب تلف البيانات.", "error");
+      showToast("خطأ في الاتصال بالخادم.", "error");
     }
   };
 
@@ -928,23 +932,34 @@ export default function ScreenerPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <button
-            type="button"
-            onClick={handleLoadSavedFilters}
-            className="flex-1 md:flex-none bg-slate-900 border border-border hover:bg-slate-800 text-slate-200 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm"
-          >
-            <FolderOpen className="h-4 w-4 text-sky-400" />
-            استعادة
-          </button>
+        <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
+          {dbScreeners.length > 0 && (
+            <select
+              className="bg-slate-900 border border-border text-slate-200 px-3 py-2.5 rounded-xl text-sm outline-none cursor-pointer hover:bg-slate-800 transition-colors"
+              onChange={(e) => {
+                if (!e.target.value) return;
+                const selected = dbScreeners.find(s => s.id === e.target.value);
+                if (selected && Array.isArray(selected.criteria)) {
+                  setFilters(selected.criteria as FilterCondition[]);
+                  showToast(`تم تحميل الفلتر السحابي: ${selected.name}`);
+                }
+                e.target.value = ""; // reset
+              }}
+            >
+              <option value="">📂 فلاتري المحفوظة...</option>
+              {dbScreeners.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          )}
 
           <button
             type="button"
             onClick={handleSaveFilters}
-            className="flex-1 md:flex-none bg-slate-900 border border-border hover:bg-slate-800 text-slate-200 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+            className="flex-1 md:flex-none bg-slate-900 border border-border hover:bg-slate-800 text-slate-200 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-sm"
           >
             <Save className="h-4 w-4 text-emerald-400" />
-            حفظ الفلتر
+            حفظ الفلتر سحابياً
           </button>
 
           <button

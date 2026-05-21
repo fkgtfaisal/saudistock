@@ -26,6 +26,7 @@ model User {
   posts                 Post[]
   comments              Comment[]
   payments              Payment[]
+  savedScreeners        SavedScreener[]
 }
 
 model Watchlist {
@@ -132,4 +133,16 @@ model Payment {
   period    String   // MONTHLY, YEARLY
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SavedScreener {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  criteria  Json     // To store the complex screener filters
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
 }
