@@ -61,16 +61,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     })
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         // @ts-ignore - custom property
         token.subscriptionTier = user.subscriptionTier;
       }
-      if (trigger === "update" && (session as any)?.user) {
-        // @ts-ignore
-        token.subscriptionTier = session.user.subscriptionTier;
+      
+      // Always keep subscription tier fresh from DB to prevent stale sessions after checkout
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { subscriptionTier: true }
+          });
+          if (dbUser) {
+            // @ts-ignore
+            token.subscriptionTier = dbUser.subscriptionTier;
+          }
+        } catch (error) {
+          console.error("[AUTH] Error fetching fresh user tier:", error);
+        }
       }
+      
       return token;
     },
     async session({ session, token }) {
