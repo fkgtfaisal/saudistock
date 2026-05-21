@@ -55,10 +55,8 @@ function CheckoutContent() {
     setAmount(calculatedAmount * 100); // Convert SAR to Halalas
     setDescription(desc);
 
-    // Fetch key dynamically to bypass Next.js build caching
-    getMoyasarKeysAction().then((res) => {
-      setPublishableKey(res.publishableKey);
-    });
+    // Hardcoded exactly as provided, completely ignoring environment variables
+    setPublishableKey("pk_test_EtHFV4BuPQokJT6jiROls87Y");
 
   }, [tier, cycle, status, router]);
 
@@ -73,7 +71,7 @@ function CheckoutContent() {
         amount: amount,
         currency: "SAR",
         description: description,
-        publishable_api_key: publishableKey,
+        publishable_api_key: "pk_test_EtHFV4BuPQokJT6jiROls87Y",
         callback_url: `${window.location.origin}/checkout/callback?tier=${tier}&cycle=${cycle}`,
         methods: ["creditcard", "stcpay"], // Apple Pay removed until merchant validation is configured
         metadata: {
@@ -140,7 +138,7 @@ function CheckoutContent() {
         <div className="bg-card border border-border rounded-2xl p-8 shadow-xl relative min-h-[400px]">
            <div className="flex items-center gap-3 mb-8 border-b border-border/50 pb-4">
               <CreditCard className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">بيانات الدفع</h2>
+              <h2 className="text-2xl font-bold">بيانات الدفع v3</h2>
            </div>
            
            {/* The div where Moyasar will inject the form */}
