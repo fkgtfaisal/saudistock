@@ -55,8 +55,10 @@ function CheckoutContent() {
     setAmount(calculatedAmount * 100); // Convert SAR to Halalas
     setDescription(desc);
 
-    // Hardcoded exactly as provided, completely ignoring environment variables
-    setPublishableKey("pk_test_EtHFV4BuPQokJT6jiROls87Y");
+    // Fetch key dynamically from environment
+    getMoyasarKeysAction().then((res) => {
+      setPublishableKey(res.publishableKey);
+    });
 
   }, [tier, cycle, status, router]);
 
@@ -71,7 +73,7 @@ function CheckoutContent() {
         amount: amount,
         currency: "SAR",
         description: description,
-        publishable_api_key: "pk_test_EtHFV4BuPQokJT6jiROls87Y",
+        publishable_api_key: publishableKey,
         callback_url: `${window.location.origin}/checkout/callback?tier=${tier}&cycle=${cycle}`,
         methods: ["creditcard", "stcpay"], // Apple Pay removed until merchant validation is configured
         metadata: {
