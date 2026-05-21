@@ -1,12 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Check, Shield, Loader2, CheckCircle2, AlertCircle, X, Sparkles } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { upgradeSubscriptionAction } from "./actions";
 
 export default function SubscriptionsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>}>
+      <SubscriptionsContent />
+    </Suspense>
+  );
+}
+
+function SubscriptionsContent() {
   const { data: session, update } = useSession();
+  const searchParams = useSearchParams();
+  const upgradeRequired = searchParams?.get("upgrade_required");
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -102,7 +113,18 @@ export default function SubscriptionsPage() {
       )}
 
       {/* Title Header */}
-      <div className="text-center mb-16">
+      <div className="text-center mb-16 relative z-10">
+        {upgradeRequired && (
+          <div className="max-w-xl mx-auto mb-8 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl p-4 flex items-center justify-center gap-3">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-semibold">
+              {upgradeRequired === "ELITE" 
+                ? "عذراً، هذه الصفحة مخصصة لمشتركي باقة النخبة (ELITE) فقط. الرجاء الترقية للوصول إليها." 
+                : "عذراً، هذه الصفحة تتطلب باقة احترافية (PRO) أو أعلى. الرجاء الترقية للوصول إليها."}
+            </span>
+          </div>
+        )}
+
         <h1 className="text-4xl font-black mb-4 bg-gradient-to-l from-white to-slate-400 bg-clip-text text-transparent">
           اختر باقة تداولك الذكية
         </h1>
