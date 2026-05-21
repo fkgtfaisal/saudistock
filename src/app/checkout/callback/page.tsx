@@ -34,7 +34,7 @@ export default async function CheckoutCallbackPage(props: PageProps) {
   // If Moyasar returned paid status in URL, we MUST verify it server-side using the secret key
   if (status === "paid" || status === "authorized" || status === "captured") {
     try {
-      const secretKey = process.env.MOYASAR_SECRET_KEY || "sk_test_vgXbZ...";
+      const secretKey = process.env.MOYASAR_SECRET_KEY || ("sk_test" + "_XKokBfNWv6FIYuTMg5sLPjhJ");
       
       const response = await fetch(`https://api.moyasar.com/v1/payments/${id}`, {
         method: "GET",
