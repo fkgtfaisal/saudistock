@@ -45,7 +45,7 @@ export default function RegisterPage() {
         window.location.href = "/login";
       } else {
         // Use window.location.href to force a full document load, ensuring iOS Safari commits cookies first
-        window.location.href = "/watchlists";
+        window.location.href = "/";
       }
     } catch (err) {
       setError("حدث خطأ في الاتصال بالخادم");
