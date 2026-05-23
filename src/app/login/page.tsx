@@ -29,7 +29,7 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       // Use window.location.href to force a full document load, ensuring iOS Safari commits cookies first
-      window.location.href = "/";
+      window.location.href = "https://tasistock.com/";
     }
   };
 
