@@ -40,10 +40,14 @@ export async function GET() {
     let marketData: Record<string, number> = {};
 
     if (symbolsArray.length > 0) {
-      const quotes = (await yahooFinance.quote(symbolsArray)) as any[];
-      quotes.forEach((quote) => {
-        marketData[quote.symbol] = quote.regularMarketPrice;
-      });
+      try {
+        const quotes = (await yahooFinance.quote(symbolsArray)) as any[];
+        quotes.forEach((quote) => {
+          marketData[quote.symbol] = quote.regularMarketPrice;
+        });
+      } catch (err) {
+        console.warn("Failed to fetch live prices for leaderboard, using average prices fallback:", err);
+      }
     }
 
     // 4. Calculate Net Worth for each user
