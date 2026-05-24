@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Plus, RefreshCw, Mail, MailOff, Loader2 } from "lucide-react";
+import { Trash2, Plus, RefreshCw, Mail, BellOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function WatchlistsPage() {
@@ -138,7 +138,7 @@ export default function WatchlistsPage() {
           ) : emailAlertsEnabled ? (
             <Mail className="w-5 h-5" />
           ) : (
-            <MailOff className="w-5 h-5" />
+            <BellOff className="w-5 h-5" />
           )}
           {emailAlertsEnabled ? "الملخص البريدي: مفعل" : "الملخص البريدي: معطل"}
         </button>
