@@ -1,4 +1,5 @@
 "use client";
+import { RiskCalculator } from "@/components/RiskCalculator";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -675,6 +676,15 @@ export default function PortfolioPage() {
                     </span>
                   </div>
                 </div>
+              )}
+
+              {/* Risk Management Calculator */}
+              {selectedStock && tradeType === "BUY" && data && (
+                <RiskCalculator 
+                  currentPrice={livePriceEstimate}
+                  availableCash={data.cashBalance}
+                  onApplyQuantity={(qty) => setTradeQuantity(qty.toString())}
+                />
               )}
 
               {/* Submit Buttons */}
