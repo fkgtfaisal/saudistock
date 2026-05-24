@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Plus, RefreshCw } from "lucide-react";
+import { Trash2, Plus, RefreshCw, Mail, MailOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 export default function WatchlistsPage() {
@@ -11,6 +11,8 @@ export default function WatchlistsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [newSymbol, setNewSymbol] = useState("");
   const [newListName, setNewListName] = useState("");
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(true);
+  const [isUpdatingAlerts, setIsUpdatingAlerts] = useState(false);
 
   const fetchWatchlists = async () => {
     try {
@@ -41,9 +43,21 @@ export default function WatchlistsPage() {
     }
   };
 
+  const fetchPreferences = async () => {
+    try {
+      const res = await fetch("/api/user/preferences");
+      if (res.ok) {
+        const data = await res.json();
+        setEmailAlertsEnabled(data.emailAlertsEnabled);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     setIsLoading(true);
-    Promise.all([fetchWatchlists(), fetchMarketData()]).then(() => setIsLoading(false));
+    Promise.all([fetchWatchlists(), fetchMarketData(), fetchPreferences()]).then(() => setIsLoading(false));
   }, []);
 
   const createWatchlist = async (e: React.FormEvent) => {
@@ -56,6 +70,25 @@ export default function WatchlistsPage() {
     });
     setNewListName("");
     fetchWatchlists();
+  };
+
+  const toggleEmailAlerts = async () => {
+    setIsUpdatingAlerts(true);
+    const newValue = !emailAlertsEnabled;
+    try {
+      const res = await fetch("/api/user/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailAlertsEnabled: newValue })
+      });
+      if (res.ok) {
+        setEmailAlertsEnabled(newValue);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdatingAlerts(false);
+    }
   };
 
   const addSymbol = async (e: React.FormEvent) => {
@@ -89,8 +122,26 @@ export default function WatchlistsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <h1 className="text-3xl font-bold">قوائم المراقبة</h1>
+        <button 
+          onClick={toggleEmailAlerts}
+          disabled={isUpdatingAlerts}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border ${
+            emailAlertsEnabled 
+              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20" 
+              : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+          }`}
+        >
+          {isUpdatingAlerts ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : emailAlertsEnabled ? (
+            <Mail className="w-5 h-5" />
+          ) : (
+            <MailOff className="w-5 h-5" />
+          )}
+          {emailAlertsEnabled ? "الملخص البريدي: مفعل" : "الملخص البريدي: معطل"}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

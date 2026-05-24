@@ -17,6 +17,8 @@ model User {
   subscriptionPeriodEnd DateTime?
   lastPaymentId         String?
   balance               Float             @default(100000) // Virtual balance for paper trading
+  emailAlertsEnabled    Boolean           @default(true)
+  lastEmailSentAt       DateTime?
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
   watchlists            Watchlist[]
