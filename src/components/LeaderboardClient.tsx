@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trophy, Medal, Crown, TrendingUp, TrendingDown, Users } from "lucide-react";
+import Link from "next/link";
 
 type LeaderboardEntry = {
   id: string;
@@ -76,7 +77,7 @@ export default function LeaderboardClient() {
             <div className="order-2 md:order-1 flex flex-col items-center w-full md:w-48 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
               <div className="bg-slate-800/80 p-4 rounded-t-xl w-full border-t-4 border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.2)] text-center relative z-10">
                 <Medal className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                <h3 className="font-bold text-lg truncate">{top3[1].name}</h3>
+                <Link href={`/trader/${top3[1].id}`} className="font-bold text-lg truncate hover:text-primary transition-colors block">{top3[1].name}</Link>
                 <div className="font-mono mt-2 text-slate-200">{(top3[1].netWorth).toLocaleString('en-US')} ر.س</div>
                 <div className={`flex items-center justify-center gap-1 font-bold mt-1 ${top3[1].returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`} dir="ltr">
                   {top3[1].returnPercent >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -92,7 +93,7 @@ export default function LeaderboardClient() {
             <div className="order-1 md:order-2 flex flex-col items-center w-full md:w-56 animate-in fade-in slide-in-from-bottom-12 duration-700">
               <div className="bg-amber-900/40 p-5 rounded-t-xl w-full border-t-4 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)] text-center relative z-20 transform -translate-y-4">
                 <Crown className="w-14 h-14 text-yellow-400 mx-auto mb-2 animate-bounce" />
-                <h3 className="font-extrabold text-xl truncate text-yellow-100">{top3[0].name}</h3>
+                <Link href={`/trader/${top3[0].id}`} className="font-extrabold text-xl truncate text-yellow-100 hover:text-white transition-colors block">{top3[0].name}</Link>
                 <div className="font-mono mt-3 text-lg text-yellow-500 font-bold">{(top3[0].netWorth).toLocaleString('en-US')} ر.س</div>
                 <div className={`flex items-center justify-center gap-1 font-bold mt-1 text-lg ${top3[0].returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`} dir="ltr">
                   {top3[0].returnPercent >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
@@ -110,7 +111,7 @@ export default function LeaderboardClient() {
             <div className="order-3 md:order-3 flex flex-col items-center w-full md:w-48 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
               <div className="bg-orange-950/40 p-4 rounded-t-xl w-full border-t-4 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.15)] text-center relative z-10">
                 <Medal className="w-10 h-10 text-orange-500 mx-auto mb-2" />
-                <h3 className="font-bold text-lg truncate">{top3[2].name}</h3>
+                <Link href={`/trader/${top3[2].id}`} className="font-bold text-lg truncate hover:text-primary transition-colors block">{top3[2].name}</Link>
                 <div className="font-mono mt-2 text-orange-200">{(top3[2].netWorth).toLocaleString('en-US')} ر.س</div>
                 <div className={`flex items-center justify-center gap-1 font-bold mt-1 ${top3[2].returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`} dir="ltr">
                   {top3[2].returnPercent >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -144,7 +145,9 @@ export default function LeaderboardClient() {
                       #{index + 4}
                     </td>
                     <td className="py-4 px-6 font-bold text-foreground">
-                      {leader.name}
+                      <Link href={`/trader/${leader.id}`} className="hover:text-primary transition-colors">
+                        {leader.name}
+                      </Link>
                     </td>
                     <td className="py-4 px-6 font-mono font-bold" dir="ltr">
                       {leader.netWorth.toLocaleString('en-US')}

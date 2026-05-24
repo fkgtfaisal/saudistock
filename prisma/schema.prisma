@@ -29,6 +29,8 @@ model User {
   comments              Comment[]
   payments              Payment[]
   savedScreeners        SavedScreener[]
+  followers             Follow[]          @relation("followers")
+  following             Follow[]          @relation("following")
 }
 
 model Watchlist {
@@ -147,4 +149,15 @@ model SavedScreener {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, name])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
 }
