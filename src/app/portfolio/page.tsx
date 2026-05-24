@@ -70,6 +70,12 @@ export default function PortfolioPage() {
   const [tradeQuantity, setTradeQuantity] = useState("");
   const [livePriceEstimate, setLivePriceEstimate] = useState<number | null>(null);
   const [fetchingPrice, setFetchingPrice] = useState(false);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isSubmittingTrade, setIsSubmittingTrade] = useState(false);
+
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [depositAmount, setDepositAmount] = useState<number>(50000);
+  const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -197,7 +203,30 @@ export default function PortfolioPage() {
     } else {
       setSelectedStock(null);
     }
+    setQuantity(1);
     setIsTradeModalOpen(true);
+  };
+
+  const handleDeposit = async () => {
+    if (depositAmount <= 0) return;
+    setIsSubmittingDeposit(true);
+    try {
+      const res = await fetch("/api/portfolio/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: depositAmount }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "فشلت عملية الإيداع");
+      
+      showToast(result.message || "تم الإيداع بنجاح", "success");
+      setIsDepositModalOpen(false);
+      fetchPortfolio(); // Refresh the portfolio data
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setIsSubmittingDeposit(false);
+    }
   };
 
   // Filter stocks based on query
@@ -272,8 +301,16 @@ export default function PortfolioPage() {
           </button>
           
           <button 
+            onClick={() => setIsDepositModalOpen(true)}
+            className="hidden md:flex bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-bold transition-all items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20"
+          >
+            <TrendingUp className="h-4 w-4" />
+            إيداع كاش
+          </button>
+
+          <button 
             onClick={() => openTradeModal("BUY")}
-            className="flex-1 bg-primary hover:bg-primary/95 text-primary-foreground px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20"
+            className="flex-1 md:flex-none bg-primary hover:bg-primary/95 text-primary-foreground px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-primary/20"
           >
             <Plus className="h-4 w-4" />
             شراء أسهم
@@ -717,6 +754,89 @@ export default function PortfolioPage() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Deposit Modal */}
+      {isDepositModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setIsDepositModalOpen(false)}></div>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl relative z-10 flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-border flex justify-between items-center bg-slate-900/50 rounded-t-2xl">
+              <h2 className="text-xl font-black flex items-center gap-2">
+                <Wallet className="h-6 w-6 text-emerald-500" />
+                زيادة رأس المال (إيداع)
+              </h2>
+              <button onClick={() => setIsDepositModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors p-1 bg-muted rounded-full">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto">
+              <p className="text-sm text-muted-foreground mb-6">
+                قم بإيداع مبالغ نقدية إضافية في محفظتك لزيادة قدرتك الشرائية. المبالغ المضافة ستنعكس فوراً على الكاش المتاح.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-bold text-foreground block mb-2">اختر مبلغ الإيداع الجاهز</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[10000, 50000, 100000].map(amt => (
+                      <button
+                        key={amt}
+                        onClick={() => setDepositAmount(amt)}
+                        className={`py-2 rounded-lg border font-mono text-sm transition-colors ${
+                          depositAmount === amt 
+                            ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 font-bold" 
+                            : "bg-muted/50 border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        +{amt.toLocaleString('en-US')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-bold text-foreground block mb-2 mt-4">أو أدخل مبلغاً مخصصاً (ر.س)</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                      <span className="text-muted-foreground font-bold">SAR</span>
+                    </div>
+                    <input 
+                      type="number"
+                      min="1000"
+                      step="1000"
+                      value={depositAmount || ""}
+                      onChange={(e) => setDepositAmount(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-border rounded-xl py-3 px-4 pr-14 text-left font-mono text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-5 border-t border-border bg-slate-900/50 rounded-b-2xl flex gap-3">
+              <button 
+                onClick={handleDeposit}
+                disabled={isSubmittingDeposit || depositAmount <= 0}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+              >
+                {isSubmittingDeposit ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wallet className="w-5 h-5" />}
+                تأكيد الإيداع
+              </button>
+              <button 
+                onClick={() => setIsDepositModalOpen(false)}
+                className="px-6 bg-transparent border border-border hover:bg-muted text-foreground py-3 rounded-xl font-bold transition-all"
+              >
+                إلغاء
+              </button>
+            </div>
           </div>
         </div>
       )}
