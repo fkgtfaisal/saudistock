@@ -3,11 +3,11 @@ import prisma from "@/lib/prisma";
 import { Resend } from "resend";
 import yahooFinance from "yahoo-finance2";
 
-// Initialize Resend with your API key
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function GET(req: Request) {
   try {
+    // Initialize Resend inside the function so it doesn't break at build time
+    const resend = new Resend(process.env.RESEND_API_KEY || "dummy_key");
+
     // 1. Verify Cron Secret to prevent unauthorized access
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -52,7 +52,7 @@ export async function GET(req: Request) {
 
     // 4. Fetch market data for all symbols
     const symbolsArray = Array.from(allSymbols);
-    const quotes = await yahooFinance.quote(symbolsArray);
+    const quotes = (await yahooFinance.quote(symbolsArray)) as any[];
     
     // Create a lookup map
     const marketData: Record<string, any> = {};
