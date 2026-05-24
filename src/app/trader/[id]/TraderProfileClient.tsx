@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { UserPlus, UserCheck, Shield, TrendingUp, TrendingDown, Users, Wallet } from "lucide-react";
+import { UserPlus, UserCheck, Shield, TrendingUp, TrendingDown, Users, Wallet, Trophy } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Badge } from "@/lib/badges";
 
 type Holding = {
   symbol: string;
@@ -21,6 +22,7 @@ type TraderProps = {
     returnPercent: number;
     holdings: Holding[];
     cashPercent: number;
+    badges: Badge[];
   };
 };
 
@@ -126,11 +128,26 @@ export default function TraderProfileClient({ trader }: TraderProps) {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col md:flex-row items-center gap-3">
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold ${trader.returnPercent >= 0 ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"}`} dir="ltr">
                 {trader.returnPercent >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                 {trader.returnPercent.toFixed(2)}% إجمالي العائد
               </div>
+              
+              {trader.badges && trader.badges.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap justify-center mt-2 md:mt-0">
+                  {trader.badges.map(badge => (
+                    <div 
+                      key={badge.id}
+                      title={badge.description}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${badge.color} cursor-help transition-transform hover:scale-105`}
+                    >
+                      <span className="text-sm">{badge.icon}</span>
+                      {badge.name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

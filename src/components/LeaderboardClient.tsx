@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Trophy, Medal, Crown, TrendingUp, TrendingDown, Users } from "lucide-react";
 import Link from "next/link";
 
+import { Badge } from "@/lib/badges";
+
 type LeaderboardEntry = {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ type LeaderboardEntry = {
   portfolioValue: number;
   netWorth: number;
   returnPercent: number;
+  badges?: Badge[];
 };
 
 export default function LeaderboardClient() {
@@ -78,6 +81,13 @@ export default function LeaderboardClient() {
               <div className="bg-slate-800/80 p-4 rounded-t-xl w-full border-t-4 border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.2)] text-center relative z-10">
                 <Medal className="w-10 h-10 text-slate-300 mx-auto mb-2" />
                 <Link href={`/trader/${top3[1].id}`} className="font-bold text-lg truncate hover:text-primary transition-colors block">{top3[1].name}</Link>
+                {top3[1].badges && top3[1].badges.length > 0 && (
+                  <div className="flex gap-1 justify-center mt-1">
+                    {top3[1].badges.slice(0, 2).map(b => (
+                      <span key={b.id} title={b.name} className="text-sm cursor-help">{b.icon}</span>
+                    ))}
+                  </div>
+                )}
                 <div className="font-mono mt-2 text-slate-200">{(top3[1].netWorth).toLocaleString('en-US')} ر.س</div>
                 <div className={`flex items-center justify-center gap-1 font-bold mt-1 ${top3[1].returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`} dir="ltr">
                   {top3[1].returnPercent >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -94,6 +104,13 @@ export default function LeaderboardClient() {
               <div className="bg-amber-900/40 p-5 rounded-t-xl w-full border-t-4 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)] text-center relative z-20 transform -translate-y-4">
                 <Crown className="w-14 h-14 text-yellow-400 mx-auto mb-2 animate-bounce" />
                 <Link href={`/trader/${top3[0].id}`} className="font-extrabold text-xl truncate text-yellow-100 hover:text-white transition-colors block">{top3[0].name}</Link>
+                {top3[0].badges && top3[0].badges.length > 0 && (
+                  <div className="flex gap-1 justify-center mt-1">
+                    {top3[0].badges.slice(0, 3).map(b => (
+                      <span key={b.id} title={b.name} className="text-base cursor-help">{b.icon}</span>
+                    ))}
+                  </div>
+                )}
                 <div className="font-mono mt-3 text-lg text-yellow-500 font-bold">{(top3[0].netWorth).toLocaleString('en-US')} ر.س</div>
                 <div className={`flex items-center justify-center gap-1 font-bold mt-1 text-lg ${top3[0].returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`} dir="ltr">
                   {top3[0].returnPercent >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
@@ -112,6 +129,13 @@ export default function LeaderboardClient() {
               <div className="bg-orange-950/40 p-4 rounded-t-xl w-full border-t-4 border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.15)] text-center relative z-10">
                 <Medal className="w-10 h-10 text-orange-500 mx-auto mb-2" />
                 <Link href={`/trader/${top3[2].id}`} className="font-bold text-lg truncate hover:text-primary transition-colors block">{top3[2].name}</Link>
+                {top3[2].badges && top3[2].badges.length > 0 && (
+                  <div className="flex gap-1 justify-center mt-1">
+                    {top3[2].badges.slice(0, 2).map(b => (
+                      <span key={b.id} title={b.name} className="text-sm cursor-help">{b.icon}</span>
+                    ))}
+                  </div>
+                )}
                 <div className="font-mono mt-2 text-orange-200">{(top3[2].netWorth).toLocaleString('en-US')} ر.س</div>
                 <div className={`flex items-center justify-center gap-1 font-bold mt-1 ${top3[2].returnPercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`} dir="ltr">
                   {top3[2].returnPercent >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -145,9 +169,18 @@ export default function LeaderboardClient() {
                       #{index + 4}
                     </td>
                     <td className="py-4 px-6 font-bold text-foreground">
-                      <Link href={`/trader/${leader.id}`} className="hover:text-primary transition-colors">
-                        {leader.name}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/trader/${leader.id}`} className="hover:text-primary transition-colors">
+                          {leader.name}
+                        </Link>
+                        {leader.badges && leader.badges.length > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            {leader.badges.map(b => (
+                              <span key={b.id} title={b.name} className="text-xs cursor-help">{b.icon}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-6 font-mono font-bold" dir="ltr">
                       {leader.netWorth.toLocaleString('en-US')}

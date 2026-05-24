@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import yahooFinance from "yahoo-finance2";
+import { getBadges } from "@/lib/badges";
 
 const INITIAL_BALANCE = 100000;
 
@@ -61,6 +62,8 @@ export async function GET() {
 
       const netWorth = user.balance + totalPortfolioValue;
       const returnPercent = ((netWorth - INITIAL_BALANCE) / INITIAL_BALANCE) * 100;
+      const cashPercent = netWorth > 0 ? (user.balance / netWorth) * 100 : 0;
+      const badges = getBadges(netWorth, returnPercent, cashPercent);
 
       return {
         id: user.id,
@@ -69,6 +72,7 @@ export async function GET() {
         portfolioValue: totalPortfolioValue,
         netWorth: netWorth,
         returnPercent: returnPercent,
+        badges: badges,
       };
     });
 

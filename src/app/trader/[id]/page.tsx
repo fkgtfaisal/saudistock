@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import TraderProfileClient from "./TraderProfileClient";
 import yahooFinance from "yahoo-finance2";
 import { Metadata } from "next";
+import { getBadges } from "@/lib/badges";
 
 export const metadata: Metadata = {
   title: "ملف المتداول | SaudiStock",
@@ -93,6 +94,7 @@ export default async function TraderProfilePage({
   });
 
   const cashPercent = (trader.balance / netWorth) * 100;
+  const badges = getBadges(netWorth, returnPercent, cashPercent);
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,6 +108,7 @@ export default async function TraderProfilePage({
           returnPercent,
           holdings: holdings.sort((a, b) => b.percent - a.percent),
           cashPercent,
+          badges,
         }}
       />
     </div>
