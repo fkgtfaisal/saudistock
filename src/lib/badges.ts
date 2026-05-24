@@ -55,7 +55,18 @@ export function getBadges(
     });
   }
 
-  // 4. مغامر
+  // 4. متداول نشط (بين 5% و 80% كاش)
+  if (cashPercent > 5 && cashPercent < 80 && netWorth > 0) {
+    badges.push({
+      id: "active",
+      name: "متداول نشط",
+      icon: "💼",
+      color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      description: "يوازن محفظته بين الأسهم والسيولة",
+    });
+  }
+
+  // 5. مغامر
   if (cashPercent <= 5 && netWorth > 0) {
     badges.push({
       id: "adventurer",
