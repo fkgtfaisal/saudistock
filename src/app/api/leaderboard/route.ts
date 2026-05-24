@@ -7,11 +7,8 @@ const INITIAL_BALANCE = 100000;
 
 export async function GET() {
   try {
-    // 1. Fetch only PRO and ELITE users with their portfolios and items
+    // Fetch all users with their portfolios and items
     const users = await prisma.user.findMany({
-      where: {
-        subscriptionTier: { in: ["PRO", "ELITE"] },
-      },
       select: {
         id: true,
         name: true,
