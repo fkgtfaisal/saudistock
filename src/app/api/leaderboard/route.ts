@@ -77,8 +77,13 @@ export async function GET() {
       };
     });
 
-    // 5. Sort by netWorth descending
-    leaderboard.sort((a, b) => b.netWorth - a.netWorth);
+    // 6. Sort by net worth (descending), then by portfolio value (descending) for active traders
+    leaderboard.sort((a, b) => {
+      if (b.netWorth !== a.netWorth) {
+        return b.netWorth - a.netWorth;
+      }
+      return b.portfolioValue - a.portfolioValue;
+    });
 
     // Return the top 100 traders
     return NextResponse.json(leaderboard.slice(0, 100));
