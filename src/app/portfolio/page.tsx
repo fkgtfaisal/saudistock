@@ -65,6 +65,7 @@ export default function PortfolioPage() {
   const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
   const [selectedStock, setSelectedStock] = useState<StockInfo | null>(null);
   const [stockSearchQuery, setStockSearchQuery] = useState("");
+  const [showStockDropdown, setShowStockDropdown] = useState(false);
   const [tradeQuantity, setTradeQuantity] = useState("");
   const [livePriceEstimate, setLivePriceEstimate] = useState<number | null>(null);
   const [fetchingPrice, setFetchingPrice] = useState(false);
@@ -200,10 +201,11 @@ export default function PortfolioPage() {
 
   // Filter stocks based on query
   const filteredStocks = SAUDI_STOCKS.filter(stock => 
+    !stockSearchQuery || 
     stock.nameAr.includes(stockSearchQuery) || 
     stock.symbol.includes(stockSearchQuery) ||
     stock.nameEn.toLowerCase().includes(stockSearchQuery.toLowerCase())
-  ).slice(0, 5);
+  ).slice(0, 10);
 
   // Portfolio total gain/loss calculations
   const totalCost = data?.items.reduce((sum, item) => sum + item.totalCost, 0) || 0;
@@ -592,14 +594,19 @@ export default function PortfolioPage() {
                       <input 
                         type="text"
                         value={stockSearchQuery}
-                        onChange={(e) => setStockSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setStockSearchQuery(e.target.value);
+                          setShowStockDropdown(true);
+                        }}
+                        onFocus={() => setShowStockDropdown(true)}
+                        onBlur={() => setTimeout(() => setShowStockDropdown(false), 200)}
                         placeholder="ابحث برقم الرمز أو اسم الشركة..."
                         className="w-full bg-slate-900 border border-border rounded-xl pr-10 pl-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground"
                       />
                     </div>
 
-                    {stockSearchQuery && (
-                      <div className="absolute z-10 w-full bg-slate-900 border border-border rounded-xl mt-1 shadow-2xl divide-y divide-border overflow-hidden">
+                    {showStockDropdown && !selectedStock && (
+                      <div className="absolute z-10 w-full bg-slate-900 border border-border rounded-xl mt-1 shadow-2xl divide-y divide-border overflow-hidden max-h-60 overflow-y-auto">
                         {filteredStocks.length === 0 ? (
                           <div className="p-3 text-sm text-muted-foreground text-center">
                             لا توجد شركات مطابقة لبحثك
@@ -609,9 +616,10 @@ export default function PortfolioPage() {
                             <button
                               key={stock.symbol}
                               type="button"
-                              onClick={() => {
+                              onMouseDown={() => {
                                 setSelectedStock(stock);
                                 setStockSearchQuery("");
+                                setShowStockDropdown(false);
                               }}
                               className="w-full text-right p-3.5 text-sm hover:bg-primary/10 transition-colors flex justify-between items-center"
                             >
