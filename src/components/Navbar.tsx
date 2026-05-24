@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { STOCK_MAP } from "@/lib/stocks";
-import { Menu, X, Building2, Globe, LayoutDashboard, BarChart3, Filter, Bell, Newspaper, Users, Zap, Shield, Settings, LogOut, User as UserIcon, ChevronDown, Search } from "lucide-react";
+import { Menu, X, Building2, Globe, LayoutDashboard, BarChart3, Filter, Bell, Newspaper, Users, Zap, Shield, Settings, LogOut, User as UserIcon, ChevronDown, Search, Trophy } from "lucide-react";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +38,7 @@ export function Navbar() {
     { href: "/screener", label: "الفلاتر", icon: <Filter className="h-4 w-4" /> },
     { href: "/watchlists", label: "المراقبة", icon: <Bell className="h-4 w-4" /> },
     { href: "/portfolio", label: "المحفظة", icon: <BarChart3 className="h-4 w-4" /> },
+    { href: "/leaderboard", label: "المتصدرين", icon: <Trophy className="h-4 w-4 text-yellow-500" /> },
     { href: "/news", label: "الأخبار", icon: <Newspaper className="h-4 w-4" /> },
     { href: "/community", label: "المجتمع", icon: <Users className="h-4 w-4" /> },
     { href: "/ai-analysis", label: "تحليل AI", icon: <Zap className="h-4 w-4" /> },
