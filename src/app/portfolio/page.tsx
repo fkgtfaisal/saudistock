@@ -302,7 +302,7 @@ export default function PortfolioPage() {
           
           <button 
             onClick={() => setIsDepositModalOpen(true)}
-            className="hidden md:flex bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-bold transition-all items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20"
           >
             <TrendingUp className="h-4 w-4" />
             إيداع كاش
