@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, use, useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ChartComponent } from "@/components/ChartComponent";
+import { ChartAICopilot } from "@/components/ChartAICopilot";
 import {
   fetchQuote, fetchChart,
   type StockQuote, type CandleData,
@@ -20,7 +21,8 @@ import {
   Plus,
   RefreshCw,
   Check,
-  X
+  X,
+  Bot
 } from "lucide-react";
 
 const TIMEFRAMES = ["1D","1W","1M","3M","6M","1Y","5Y","ALL"];
@@ -51,6 +53,7 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
   const [showSymbolDropdown, setShowSymbolDropdown] = useState(false);
   const [showIndicatorDropdown, setShowIndicatorDropdown] = useState(false);
   const [showWatchlistDropdown, setShowWatchlistDropdown] = useState(false);
+  const [showAICopilot, setShowAICopilot] = useState(false);
 
   // Watchlist states
   const [watchlist, setWatchlist] = useState<string[]>([]);
@@ -468,6 +471,16 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
           >
             <Camera className="h-4 w-4" />
           </button>
+
+          {/* AI Copilot Toggle */}
+          <button
+            onClick={() => setShowAICopilot(!showAICopilot)}
+            className={`p-1.5 rounded transition-colors flex items-center gap-1 font-bold text-xs ${showAICopilot ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted hover:text-primary"}`}
+            title="مساعد الذكاء الاصطناعي"
+          >
+            <Bot className="h-4 w-4" />
+            <span className="hidden sm:inline">AI المساعد</span>
+          </button>
           
           {/* Working configuration settings button */}
           <div className="relative">
@@ -593,21 +606,30 @@ export default function ChartPage({ params }: { params: Promise<{ symbol: string
       </div>
 
       {/* Main Chart Area */}
-      <div className="flex-1 min-h-0 p-1">
-        {loadingChart ? (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-card rounded-xl border border-border shadow-sm">
-            <RefreshCw className="h-8 w-8 text-primary animate-spin mb-4" />
-            <p className="text-sm font-bold text-muted-foreground">جاري تحميل بيانات الرسم البياني...</p>
+      <div className="flex-1 min-h-0 p-1 flex">
+        <div className="flex-1 min-w-0 relative">
+          {loadingChart ? (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-card rounded-xl border border-border shadow-sm">
+              <RefreshCw className="h-8 w-8 text-primary animate-spin mb-4" />
+              <p className="text-sm font-bold text-muted-foreground">جاري تحميل بيانات الرسم البياني...</p>
+            </div>
+          ) : (
+            <ChartComponent 
+              key={`${symbol}_${chartType}_${showGrid}`}
+              data={chartData} 
+              symbol={symbol} 
+              indicators={indicators} 
+              chartType={chartType} 
+              showGrid={showGrid} 
+            />
+          )}
+        </div>
+        
+        {/* AI Copilot Sidebar */}
+        {showAICopilot && (
+          <div className="w-80 md:w-96 shrink-0 border-r border-border h-full bg-card animate-in slide-in-from-left duration-300 relative z-40">
+            <ChartAICopilot symbol={symbol} onClose={() => setShowAICopilot(false)} />
           </div>
-        ) : (
-          <ChartComponent 
-            key={`${symbol}_${chartType}_${showGrid}`}
-            data={chartData} 
-            symbol={symbol} 
-            indicators={indicators} 
-            chartType={chartType} 
-            showGrid={showGrid} 
-          />
         )}
       </div>
 
