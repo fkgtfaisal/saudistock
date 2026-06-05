@@ -155,19 +155,44 @@ export const SAUDI_STOCKS: StockInfo[] = [
   })()
 ];
 
+export const TASI_INFO: StockInfo = {
+  symbol: "TASI",
+  yahooTicker: "^TASI.SR",
+  nameAr: "تاسي - المؤشر العام",
+  nameEn: "TASI - Tadawul All Share Index",
+  sector: "المؤشرات الرئيسية",
+  descriptionAr: "المؤشر العام لسوق الأسهم السعودية (تاسي) هو المؤشر الرئيسي لحركة الأسهم المدرجة في تداول."
+};
+
+export const NOMU_INFO: StockInfo = {
+  symbol: "NOMU",
+  yahooTicker: "^NOMU.SR",
+  nameAr: "نمو - مؤشر السوق الموازية",
+  nameEn: "NOMU - Parallel Market Index",
+  sector: "المؤشرات الرئيسية",
+  descriptionAr: "مؤشر السوق الموازية (نمو) هو مؤشر السوق البديلة أو الموازية المخصصة للشركات الناشئة والصغيرة والمتوسطة."
+};
+
 /** Map from Tadawul symbol → StockInfo */
-export const STOCK_MAP: Record<string, StockInfo> = Object.fromEntries(
-  SAUDI_STOCKS.map((s) => [s.symbol, s])
-);
+export const STOCK_MAP: Record<string, StockInfo> = {
+  ...Object.fromEntries(SAUDI_STOCKS.map((s) => [s.symbol, s])),
+  TASI: TASI_INFO,
+  NOMU: NOMU_INFO,
+};
 
 /** Map from Yahoo ticker → StockInfo */
-export const YAHOO_MAP: Record<string, StockInfo> = Object.fromEntries(
-  SAUDI_STOCKS.map((s) => [s.yahooTicker, s])
-);
+export const YAHOO_MAP: Record<string, StockInfo> = {
+  ...Object.fromEntries(SAUDI_STOCKS.map((s) => [s.yahooTicker, s])),
+  "^TASI.SR": TASI_INFO,
+  "^NOMU.SR": NOMU_INFO,
+};
 
 /** Get Yahoo ticker from Tadawul symbol */
 export function toYahooTicker(symbol: string): string {
   if (!symbol) return "";
+  const upper = symbol.toUpperCase();
+  if (upper === "TASI") return "^TASI.SR";
+  if (upper === "NOMU") return "^NOMU.SR";
   // If it already has a suffix or dot, return as is
   if (symbol.includes(".")) return symbol;
   // Try map, fallback to appending .SR

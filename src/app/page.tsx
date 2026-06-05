@@ -110,6 +110,7 @@ export default function LandingPage() {
               value={marketData?.tasi?.price != null ? formatPrice(marketData.tasi.price, 2) : "—"} 
               change={marketData?.tasi?.changePercent != null ? formatPercent(marketData.tasi.changePercent) : ""} 
               isUp={marketData?.tasi?.isUp ?? true} 
+              href="/chart/TASI"
             />
             <MarketCard 
               name="الشركات المرتفعة" 
@@ -239,9 +240,9 @@ export default function LandingPage() {
 
 
 // Components
-function MarketCard({ name, value, change, isUp }: { name: string, value: string, change: string, isUp: boolean }) {
-  return (
-    <div className="p-6 rounded-xl bg-background border border-border flex items-center justify-between">
+function MarketCard({ name, value, change, isUp, href }: { name: string, value: string, change: string, isUp: boolean, href?: string }) {
+  const content = (
+    <>
       <div>
         <h3 className="text-muted-foreground font-medium mb-2">{name}</h3>
         <p className="text-2xl font-bold">{value}</p>
@@ -252,6 +253,20 @@ function MarketCard({ name, value, change, isUp }: { name: string, value: string
           {change}
         </div>
       )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="p-6 rounded-xl bg-background border border-border flex items-center justify-between hover:border-primary/50 hover:bg-muted/10 transition-all cursor-pointer shadow-sm hover:shadow-md">
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="p-6 rounded-xl bg-background border border-border flex items-center justify-between">
+      {content}
     </div>
   );
 }

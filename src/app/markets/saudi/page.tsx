@@ -51,7 +51,10 @@ function TasiCard({ tasi }: { tasi: MarketData["tasi"] }) {
     </div>
   );
   return (
-    <div className="bg-card border border-border p-6 rounded-xl">
+    <Link 
+      href="/chart/TASI" 
+      className="bg-card border border-border p-6 rounded-xl block hover:border-primary/50 hover:bg-muted/10 transition-all cursor-pointer shadow-sm hover:shadow-md"
+    >
       <h3 className="text-muted-foreground text-sm font-medium mb-1">المؤشر العام (TASI)</h3>
       <p className={`text-2xl font-bold transition-all duration-300 inline-block px-2 py-0.5 rounded ${
         flash === "up" ? "bg-emerald-500/25 text-emerald-400 scale-105" :
@@ -64,7 +67,7 @@ function TasiCard({ tasi }: { tasi: MarketData["tasi"] }) {
       }`} dir="ltr">
         {formatChange(tasi.change)} ({formatPercent(tasi.changePercent)})
       </p>
-    </div>
+    </Link>
   );
 }
 
