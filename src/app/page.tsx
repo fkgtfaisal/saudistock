@@ -4,9 +4,43 @@ import { ArrowDownRight, ArrowUpRight, BarChart3, Bell, Filter, LayoutDashboard,
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { fetchMarket, type MarketData, formatPrice, formatChange, formatPercent } from "@/lib/market-api";
 
 
 export default function LandingPage() {
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
+
+  useEffect(() => {
+    fetchMarket()
+      .then(setMarketData)
+      .catch(console.error);
+  }, []);
+
+  // Derive real top gainers and losers from live market data
+  const validStocks = marketData?.stocks.filter(s => !s.error && s.changePercent != null) ?? [];
+  const topGainers = [...validStocks]
+    .sort((a, b) => (b.changePercent ?? 0) - (a.changePercent ?? 0))
+    .slice(0, 4)
+    .map(s => ({
+      symbol: s.symbol,
+      name: s.nameAr,
+      price: formatPrice(s.price),
+      change: formatChange(s.change),
+      changePercent: formatPercent(s.changePercent),
+    }));
+
+  const topLosers = [...validStocks]
+    .sort((a, b) => (a.changePercent ?? 0) - (b.changePercent ?? 0))
+    .slice(0, 4)
+    .map(s => ({
+      symbol: s.symbol,
+      name: s.nameAr,
+      price: formatPrice(s.price),
+      change: formatChange(s.change),
+      changePercent: formatPercent(s.changePercent),
+    }));
+
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       {/* Hero Section */}
@@ -71,9 +105,24 @@ export default function LandingPage() {
       <section className="py-8 bg-card border-y border-border">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <MarketCard name="تاسي (TASI)" value="12,450.25" change="+1.2%" isUp={true} />
-            <MarketCard name="نمو (NOMU)" value="26,120.40" change="-0.5%" isUp={false} />
-            <MarketCard name="إم تي 30 (MT30)" value="1,850.10" change="+0.8%" isUp={true} />
+            <MarketCard 
+              name="تاسي (TASI)" 
+              value={marketData?.tasi?.price != null ? formatPrice(marketData.tasi.price, 2) : "—"} 
+              change={marketData?.tasi?.changePercent != null ? formatPercent(marketData.tasi.changePercent) : ""} 
+              isUp={marketData?.tasi?.isUp ?? true} 
+            />
+            <MarketCard 
+              name="الشركات المرتفعة" 
+              value={marketData?.summary.advancing != null ? marketData.summary.advancing.toString() : "—"} 
+              change="" 
+              isUp={true} 
+            />
+            <MarketCard 
+              name="الشركات المنخفضة" 
+              value={marketData?.summary.declining != null ? marketData.summary.declining.toString() : "—"} 
+              change="" 
+              isUp={false} 
+            />
           </div>
         </div>
       </section>
@@ -187,20 +236,7 @@ export default function LandingPage() {
   );
 }
 
-// Dummy Data
-const topGainers = [
-  { symbol: "2222", name: "أرامكو السعودية", price: "32.40", change: "1.20", changePercent: "3.8%" },
-  { symbol: "1120", name: "الراجحي", price: "88.50", change: "2.10", changePercent: "2.4%" },
-  { symbol: "2010", name: "سابك", price: "82.10", change: "1.80", changePercent: "2.2%" },
-  { symbol: "7010", name: "اس تي سي", price: "40.20", change: "0.80", changePercent: "2.0%" },
-];
 
-const topLosers = [
-  { symbol: "4190", name: "جرير", price: "14.20", change: "-0.40", changePercent: "-2.7%" },
-  { symbol: "2280", name: "المراعي", price: "55.30", change: "-1.10", changePercent: "-1.9%" },
-  { symbol: "1180", name: "الأهلي", price: "38.90", change: "-0.60", changePercent: "-1.5%" },
-  { symbol: "4003", name: "إكسترا", price: "81.00", change: "-1.20", changePercent: "-1.4%" },
-];
 
 // Components
 function MarketCard({ name, value, change, isUp }: { name: string, value: string, change: string, isUp: boolean }) {
@@ -210,10 +246,12 @@ function MarketCard({ name, value, change, isUp }: { name: string, value: string
         <h3 className="text-muted-foreground font-medium mb-2">{name}</h3>
         <p className="text-2xl font-bold">{value}</p>
       </div>
-      <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold ${isUp ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-        {isUp ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-        {change}
-      </div>
+      {change && (
+        <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold ${isUp ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+          {isUp ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+          {change}
+        </div>
+      )}
     </div>
   );
 }
