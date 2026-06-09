@@ -78,6 +78,7 @@ export interface StockTrade {
   high: number;
   low: number;
   change: number;
+  directionBasis?: "open_close" | "previous_close";
 }
 
 export interface StockTradesData {
@@ -94,6 +95,7 @@ export interface StockTradesData {
     totalVolume: number;
     totalValue: number;
   };
+  interval?: string;
   source: string;
   updatedAt: string;
 }

@@ -71,10 +71,18 @@ export async function GET(
       .map((q, index) => {
         const open = q.open ?? q.close ?? 0;
         const close = q.close ?? open;
+        const previousClose = index > 0 ? quotes[index - 1]?.close : null;
         const high = q.high ?? Math.max(open, close);
         const low = q.low ?? Math.min(open, close);
         const volume = q.volume ?? 0;
-        const type = close >= open ? "buy" : "sell";
+        const type =
+          close > open
+            ? "buy"
+            : close < open
+              ? "sell"
+              : previousClose != null && close < previousClose
+                ? "sell"
+                : "buy";
         const price = Number(close.toFixed(2));
         const value = Number((price * volume).toFixed(2));
 
@@ -88,6 +96,7 @@ export async function GET(
           high: Number(high.toFixed(2)),
           low: Number(low.toFixed(2)),
           change: Number((close - open).toFixed(2)),
+          directionBasis: close === open ? "previous_close" : "open_close",
         };
       })
       .reverse();
@@ -119,7 +128,8 @@ export async function GET(
         totalVolume: buyVolume + sellVolume,
         totalValue: buyValue + sellValue,
       },
-      source: "estimated_intraday_bars",
+      interval: "1m",
+      source: "yahoo_intraday_estimate",
       updatedAt: new Date().toISOString(),
     };
 

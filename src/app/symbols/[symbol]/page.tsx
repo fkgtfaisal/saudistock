@@ -876,25 +876,35 @@ function TradesTape({
   loading: boolean;
   onRefresh: () => void;
 }) {
+  const [filter, setFilter] = useState<"all" | "buy" | "sell">("all");
   const trades = data?.trades ?? [];
+  const visibleTrades = filter === "all" ? trades : trades.filter((trade) => trade.type === filter);
   const buyVolume = data?.summary.buyVolume ?? 0;
   const sellVolume = data?.summary.sellVolume ?? 0;
+  const buyValue = data?.summary.buyValue ?? 0;
+  const sellValue = data?.summary.sellValue ?? 0;
   const totalVolume = buyVolume + sellVolume;
+  const totalValue = buyValue + sellValue;
   const buyPercent = totalVolume > 0 ? (buyVolume / totalVolume) * 100 : 0;
   const sellPercent = totalVolume > 0 ? (sellVolume / totalVolume) * 100 : 0;
+  const filterButtons = [
+    { id: "all" as const, label: "الكل", count: trades.length },
+    { id: "buy" as const, label: "شراء", count: data?.summary.buyCount ?? 0 },
+    { id: "sell" as const, label: "بيع", count: data?.summary.sellCount ?? 0 },
+  ];
 
   return (
     <section className="border border-border bg-card rounded-2xl overflow-hidden shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/10">
         <div>
-          <h3 className="text-xs font-black">الصفقات حسب النوع</h3>
-          <p className="text-[10px] text-muted-foreground">تقديري من بيانات الدقيقة</p>
+          <h3 className="text-xs font-black">نشاط التداول التقديري</h3>
+          <p className="text-[10px] text-muted-foreground">Yahoo 1m - ليس سجل صفقات رسمي</p>
         </div>
         <button
           type="button"
           onClick={onRefresh}
           className="p-1.5 rounded-lg bg-background border border-border text-muted-foreground hover:text-primary hover:border-primary transition-all"
-          title="تحديث الصفقات"
+          title="تحديث النشاط"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
         </button>
@@ -905,13 +915,18 @@ function TradesTape({
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
             <p className="text-[10px] text-emerald-300">شراء</p>
             <p className="text-sm font-black" dir="ltr">{formatVolume(buyVolume)}</p>
-            <p className="text-[10px] text-muted-foreground" dir="ltr">{buyPercent.toFixed(1)}%</p>
+            <p className="text-[10px] text-muted-foreground" dir="ltr">{buyPercent.toFixed(1)}% · {formatTradeValue(buyValue)}</p>
           </div>
           <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2">
             <p className="text-[10px] text-rose-300">بيع</p>
             <p className="text-sm font-black" dir="ltr">{formatVolume(sellVolume)}</p>
-            <p className="text-[10px] text-muted-foreground" dir="ltr">{sellPercent.toFixed(1)}%</p>
+            <p className="text-[10px] text-muted-foreground" dir="ltr">{sellPercent.toFixed(1)}% · {formatTradeValue(sellValue)}</p>
           </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border border-border bg-background/50 px-2 py-1.5 text-[10px]">
+          <span className="text-muted-foreground">إجمالي النشاط</span>
+          <span className="font-bold" dir="ltr">{formatVolume(totalVolume)} · {formatTradeValue(totalValue)}</span>
         </div>
 
         <div className="h-2 overflow-hidden rounded-full bg-muted/40">
@@ -921,24 +936,42 @@ function TradesTape({
           </div>
         </div>
 
-        <div className="grid grid-cols-[48px_42px_1fr_1fr_1fr] px-1 text-[9px] font-bold text-muted-foreground">
+        <div className="grid grid-cols-3 rounded-lg border border-border bg-background/50 p-1">
+          {filterButtons.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              className={`rounded-md px-2 py-1 text-[10px] font-bold transition-all ${
+                filter === item.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {item.label} <span dir="ltr">({item.count})</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-[44px_42px_1fr_1fr_1fr_1fr] px-1 text-[9px] font-bold text-muted-foreground">
           <span>الوقت</span>
           <span className="text-center">النوع</span>
           <span className="text-left">السعر</span>
+          <span className="text-left">التغير</span>
           <span className="text-left">الكمية</span>
           <span className="text-left">القيمة</span>
         </div>
 
         <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50">
           {loading && trades.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">جاري تحميل الصفقات...</div>
-          ) : trades.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">لا توجد بيانات صفقات متاحة الآن</div>
+            <div className="py-8 text-center text-xs text-muted-foreground">جاري تحميل النشاط...</div>
+          ) : visibleTrades.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">لا توجد بيانات مطابقة الآن</div>
           ) : (
-            trades.map((trade) => {
+            visibleTrades.map((trade) => {
               const isBuy = trade.type === "buy";
               return (
-                <div key={trade.id} className="grid grid-cols-[48px_42px_1fr_1fr_1fr] items-center px-1 py-2 text-[11px]">
+                <div key={trade.id} className="grid grid-cols-[44px_42px_1fr_1fr_1fr_1fr] items-center px-1 py-2 text-[11px]">
                   <span className="text-muted-foreground" dir="ltr">{trade.time}</span>
                   <span className={`mx-auto rounded px-1.5 py-0.5 text-[10px] font-bold ${
                     isBuy ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
@@ -946,6 +979,9 @@ function TradesTape({
                     {isBuy ? "شراء" : "بيع"}
                   </span>
                   <span className="text-left font-bold" dir="ltr">{formatPrice(trade.price)}</span>
+                  <span className={`text-left ${trade.change >= 0 ? "text-emerald-300" : "text-rose-300"}`} dir="ltr">
+                    {formatChange(trade.change)}
+                  </span>
                   <span className="text-left text-muted-foreground" dir="ltr">{formatVolume(trade.quantity)}</span>
                   <span className="text-left text-muted-foreground" dir="ltr">{formatTradeValue(trade.value)}</span>
                 </div>
@@ -956,7 +992,7 @@ function TradesTape({
 
         {data?.updatedAt && (
           <p className="border-t border-border pt-2 text-[10px] text-muted-foreground">
-            آخر تحديث: {new Date(data.updatedAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+            آخر تحديث: {new Date(data.updatedAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })} · المصدر: Yahoo
           </p>
         )}
       </div>
