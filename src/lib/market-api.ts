@@ -68,6 +68,36 @@ export interface MarketData {
   updatedAt: string;
 }
 
+export interface StockTrade {
+  id: string;
+  time: string;
+  type: "buy" | "sell";
+  price: number;
+  quantity: number;
+  value: number;
+  high: number;
+  low: number;
+  change: number;
+}
+
+export interface StockTradesData {
+  symbol: string;
+  ticker: string;
+  trades: StockTrade[];
+  summary: {
+    buyCount: number;
+    sellCount: number;
+    buyVolume: number;
+    sellVolume: number;
+    buyValue: number;
+    sellValue: number;
+    totalVolume: number;
+    totalValue: number;
+  };
+  source: string;
+  updatedAt: string;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /** Format a large number (e.g. marketCap) to a readable string */
@@ -134,6 +164,12 @@ export async function fetchSummary(symbol: string): Promise<any> {
 export async function fetchNews(symbol: string): Promise<any[]> {
   const res = await fetch(`/api/news/${symbol}`, { next: { revalidate: 300 } });
   if (!res.ok) throw new Error(`Failed to fetch news for ${symbol}`);
+  return res.json();
+}
+
+export async function fetchTrades(symbol: string): Promise<StockTradesData> {
+  const res = await fetch(`/api/trades/${symbol}?limit=50`, { next: { revalidate: 30 } });
+  if (!res.ok) throw new Error(`Failed to fetch trades for ${symbol}`);
   return res.json();
 }
 

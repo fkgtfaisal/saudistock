@@ -34,7 +34,8 @@ export async function proxy(request: NextRequest) {
     nextUrl.pathname.startsWith("/api/summary") ||
     nextUrl.pathname.startsWith("/api/chart") ||
     nextUrl.pathname.startsWith("/api/charts") ||
-    nextUrl.pathname.startsWith("/api/news");
+    nextUrl.pathname.startsWith("/api/news") ||
+    nextUrl.pathname.startsWith("/api/trades");
 
   // Allow next-auth API routes and static assets always
   if (isApiAuthRoute || isStaticRoute) {

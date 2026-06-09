@@ -15,8 +15,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChartComponent } from "@/components/ChartComponent";
 import { FinancialsChartsSection } from "@/components/FinancialsChartsSection";
 import {
-  fetchQuote, fetchChart, fetchSummary, fetchNews,
-  type StockQuote, type CandleData,
+  fetchQuote, fetchChart, fetchSummary, fetchNews, fetchTrades,
+  type StockQuote, type CandleData, type StockTradesData,
   formatPrice, formatChange, formatPercent, formatVolume, formatMarketCap, formatSAR,
 } from "@/lib/market-api";
 import { STOCK_MAP, SAUDI_STOCKS } from "@/lib/stocks";
@@ -54,6 +54,8 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [news, setNews]             = useState<any[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
+  const [tradesData, setTradesData] = useState<StockTradesData | null>(null);
+  const [loadingTrades, setLoadingTrades] = useState(false);
   const [activeTab, setActiveTab]   = useState("overview");
   const [indicators, setIndicators] = useState<string[]>([]);
   const [watchlist, setWatchlist]   = useState<string[]>([]);
@@ -122,8 +124,21 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
     finally { setLoadingNews(false); }
   }, [symbol, news.length]);
 
+  const loadTrades = useCallback(async () => {
+    try {
+      setLoadingTrades(true);
+      const data = await fetchTrades(symbol);
+      setTradesData(data);
+    } catch {
+      // Keep the previous tape if the intraday feed is temporarily unavailable.
+    } finally {
+      setLoadingTrades(false);
+    }
+  }, [symbol]);
+
   useEffect(() => { loadQuote(); }, [loadQuote]);
   useEffect(() => { loadChart(); }, [loadChart]);
+  useEffect(() => { loadTrades(); }, [loadTrades]);
 
   // Load saved layout settings (timeframe and indicators)
   useEffect(() => {
@@ -196,6 +211,11 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
     const id = setInterval(loadQuote, intervalTime);
     return () => clearInterval(id);
   }, [loadQuote, quote?.marketState]);
+
+  useEffect(() => {
+    const id = setInterval(loadTrades, 30000);
+    return () => clearInterval(id);
+  }, [loadTrades]);
 
   // --- Watchlist Persistence ---
   const [isWatchlistLoaded, setIsWatchlistLoaded] = useState(false);
@@ -686,6 +706,8 @@ export default function SymbolPage({ params }: { params: Promise<{ symbol: strin
                 </div>
               )}
             </div>
+
+            <TradesTape data={tradesData} loading={loadingTrades} onRefresh={loadTrades} />
           </div>
         </div>
       </div>
@@ -835,6 +857,110 @@ function StatRow({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground">{label}</span>
       <span className="font-bold" dir="ltr">{value}</span>
     </div>
+  );
+}
+
+function formatTradeValue(value: number) {
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
+}
+
+function TradesTape({
+  data,
+  loading,
+  onRefresh,
+}: {
+  data: StockTradesData | null;
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  const trades = data?.trades ?? [];
+  const buyVolume = data?.summary.buyVolume ?? 0;
+  const sellVolume = data?.summary.sellVolume ?? 0;
+  const totalVolume = buyVolume + sellVolume;
+  const buyPercent = totalVolume > 0 ? (buyVolume / totalVolume) * 100 : 0;
+  const sellPercent = totalVolume > 0 ? (sellVolume / totalVolume) * 100 : 0;
+
+  return (
+    <section className="border border-border bg-card rounded-2xl overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/10">
+        <div>
+          <h3 className="text-xs font-black">الصفقات حسب النوع</h3>
+          <p className="text-[10px] text-muted-foreground">تقديري من بيانات الدقيقة</p>
+        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="p-1.5 rounded-lg bg-background border border-border text-muted-foreground hover:text-primary hover:border-primary transition-all"
+          title="تحديث الصفقات"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+
+      <div className="p-3 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
+            <p className="text-[10px] text-emerald-300">شراء</p>
+            <p className="text-sm font-black" dir="ltr">{formatVolume(buyVolume)}</p>
+            <p className="text-[10px] text-muted-foreground" dir="ltr">{buyPercent.toFixed(1)}%</p>
+          </div>
+          <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-2">
+            <p className="text-[10px] text-rose-300">بيع</p>
+            <p className="text-sm font-black" dir="ltr">{formatVolume(sellVolume)}</p>
+            <p className="text-[10px] text-muted-foreground" dir="ltr">{sellPercent.toFixed(1)}%</p>
+          </div>
+        </div>
+
+        <div className="h-2 overflow-hidden rounded-full bg-muted/40">
+          <div className="flex h-full">
+            <div className="h-full bg-emerald-500" style={{ width: `${buyPercent}%` }} />
+            <div className="h-full bg-rose-500" style={{ width: `${sellPercent}%` }} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[48px_42px_1fr_1fr_1fr] px-1 text-[9px] font-bold text-muted-foreground">
+          <span>الوقت</span>
+          <span className="text-center">النوع</span>
+          <span className="text-left">السعر</span>
+          <span className="text-left">الكمية</span>
+          <span className="text-left">القيمة</span>
+        </div>
+
+        <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50">
+          {loading && trades.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">جاري تحميل الصفقات...</div>
+          ) : trades.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">لا توجد بيانات صفقات متاحة الآن</div>
+          ) : (
+            trades.map((trade) => {
+              const isBuy = trade.type === "buy";
+              return (
+                <div key={trade.id} className="grid grid-cols-[48px_42px_1fr_1fr_1fr] items-center px-1 py-2 text-[11px]">
+                  <span className="text-muted-foreground" dir="ltr">{trade.time}</span>
+                  <span className={`mx-auto rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                    isBuy ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
+                  }`}>
+                    {isBuy ? "شراء" : "بيع"}
+                  </span>
+                  <span className="text-left font-bold" dir="ltr">{formatPrice(trade.price)}</span>
+                  <span className="text-left text-muted-foreground" dir="ltr">{formatVolume(trade.quantity)}</span>
+                  <span className="text-left text-muted-foreground" dir="ltr">{formatTradeValue(trade.value)}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {data?.updatedAt && (
+          <p className="border-t border-border pt-2 text-[10px] text-muted-foreground">
+            آخر تحديث: {new Date(data.updatedAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1557,4 +1683,3 @@ function TabEmpty({ msg }: { msg: string }) {
     </div>
   );
 }
-
