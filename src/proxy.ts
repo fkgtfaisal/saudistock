@@ -13,6 +13,14 @@ export async function proxy(request: NextRequest) {
   const isLoggedIn = hasAuthjsDev || hasAuthjsProd || hasNextAuthDev || hasNextAuthProd;
 
   // Define public paths that don't require authentication
+  const isPublicPage =
+    nextUrl.pathname === "/" ||
+    nextUrl.pathname === "/login" ||
+    nextUrl.pathname === "/register" ||
+    nextUrl.pathname === "/markets/saudi" ||
+    nextUrl.pathname === "/news" ||
+    nextUrl.pathname === "/subscriptions" ||
+    nextUrl.pathname.startsWith("/symbols/");
   const isAuthRoute = nextUrl.pathname === "/login" || nextUrl.pathname === "/register";
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
   const isStaticRoute = 
@@ -22,10 +30,18 @@ export async function proxy(request: NextRequest) {
     nextUrl.pathname.endsWith(".jpg") ||
     nextUrl.pathname.endsWith(".svg") ||
     nextUrl.pathname.startsWith("/api/quote") || 
-    nextUrl.pathname.startsWith("/api/market");
+    nextUrl.pathname.startsWith("/api/market") ||
+    nextUrl.pathname.startsWith("/api/summary") ||
+    nextUrl.pathname.startsWith("/api/chart") ||
+    nextUrl.pathname.startsWith("/api/charts") ||
+    nextUrl.pathname.startsWith("/api/news");
 
   // Allow next-auth API routes and static assets always
   if (isApiAuthRoute || isStaticRoute) {
+    return NextResponse.next();
+  }
+
+  if (isPublicPage && !isAuthRoute) {
     return NextResponse.next();
   }
 

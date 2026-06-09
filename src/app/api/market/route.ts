@@ -7,6 +7,18 @@ const yahooFinance = new YF({ suppressNotices: ["yahooSurvey"] });
 
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
 const CACHE_TTL_MS = 60 * 1000;
+const QUOTE_TIMEOUT_MS = 8000;
+
+type YahooQuote = {
+  regularMarketPrice?: number;
+  regularMarketPreviousClose?: number;
+  regularMarketChange?: number;
+  regularMarketChangePercent?: number;
+  regularMarketVolume?: number;
+  marketCap?: number;
+  marketState?: string;
+  currency?: string;
+};
 
 function getCached<T>(key: string): T | null {
   const entry = cache.get(key);
@@ -18,6 +30,15 @@ function setCache(key: string, data: unknown) {
   cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error("Yahoo Finance request timed out")), timeoutMs);
+    }),
+  ]);
+}
+
 export async function GET(_req: NextRequest) {
   const cacheKey = "market:saudi";
   const cached = getCached(cacheKey);
@@ -26,7 +47,10 @@ export async function GET(_req: NextRequest) {
   try {
     const results = await Promise.allSettled(
       SAUDI_STOCKS.map((info) =>
-        yahooFinance.quote(info.yahooTicker, {}, { validateResult: false })
+        withTimeout(
+          yahooFinance.quote(info.yahooTicker, {}, { validateResult: false }),
+          QUOTE_TIMEOUT_MS
+        )
       )
     );
 
@@ -35,7 +59,7 @@ export async function GET(_req: NextRequest) {
       if (result.status === "rejected" || !result.value) {
         return { symbol: info.symbol, nameAr: info.nameAr, nameEn: info.nameEn, sector: info.sector, price: null, previousClose: null, change: null, changePercent: null, volume: null, marketCap: null, isUp: false, marketState: "CLOSED", currency: "SAR", error: true };
       }
-      const q = result.value;
+      const q = result.value as YahooQuote;
       const changePercent = q.regularMarketChangePercent ?? 0;
       return {
         symbol: info.symbol,
@@ -62,7 +86,10 @@ export async function GET(_req: NextRequest) {
     // TASI index
     let tasiData = null;
     try {
-      const tasi = await yahooFinance.quote("^TASI.SR", {}, { validateResult: false });
+      const tasi = (await withTimeout(
+        yahooFinance.quote("^TASI.SR", {}, { validateResult: false }),
+        QUOTE_TIMEOUT_MS
+      )) as YahooQuote;
       if (tasi) {
         tasiData = {
           price: tasi.regularMarketPrice ?? null,

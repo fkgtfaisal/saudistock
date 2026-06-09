@@ -2,12 +2,26 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 
+function getSafeCallbackUrl(callbackUrl: string | null) {
+  if (!callbackUrl) return "/";
+  if (callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) return callbackUrl;
+
+  try {
+    const url = new URL(callbackUrl);
+    if (url.origin === window.location.origin) {
+      return `${url.pathname}${url.search}${url.hash}`;
+    }
+  } catch {
+    // Fall through to the default destination.
+  }
+
+  return "/";
+}
+
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,7 +43,8 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       // Use window.location.href to force a full document load, ensuring iOS Safari commits cookies first
-      window.location.href = "https://tasistock.com/";
+      const searchParams = new URLSearchParams(window.location.search);
+      window.location.href = getSafeCallbackUrl(searchParams.get("callbackUrl"));
     }
   };
 
