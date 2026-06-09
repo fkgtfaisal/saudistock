@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChartComponent } from "@/components/ChartComponent";
+import { FinancialsChartsSection } from "@/components/FinancialsChartsSection";
 import {
   fetchQuote, fetchChart, fetchSummary, fetchNews,
   type StockQuote, type CandleData,
@@ -995,6 +996,8 @@ function FinancialsTab({ summary, loading }: { summary: any; loading: boolean })
 
   return (
     <div className="space-y-4">
+      <FinancialsChartsSection summary={summary} />
+
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="bg-card border border-border rounded-xl p-1.5 flex gap-1 flex-wrap items-center shadow-sm">
           {(["income","balance","cashflow"] as const).map((s) => (
